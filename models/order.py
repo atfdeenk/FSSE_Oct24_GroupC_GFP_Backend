@@ -15,7 +15,7 @@ class Orders(db.Model):
     created_at: datetime = db.Column(db.DateTime, default=crono.now)
 
     user = db.relationship("Users", back_populates="orders")
-    order_items = db.relationship("OrderItem", backref="order", lazy=True)
+    order_items = db.relationship("OrderItems", backref="order", lazy=True)
 
     def __repr__(self):
         return f"<Order {self.id} - User {self.user_id}>"

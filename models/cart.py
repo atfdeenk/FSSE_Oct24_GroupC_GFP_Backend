@@ -14,7 +14,7 @@ class Cart(db.Model):
     )
     created_at: datetime = db.Column(db.DateTime, default=crono.now)
 
-    cart_items = db.relationship("CartItem", backref="cart", lazy=True)
+    cart_items = db.relationship("CartItems", backref="cart", lazy=True)
 
     def __repr__(self):
         return f"<Cart User ID {self.user_id}>"

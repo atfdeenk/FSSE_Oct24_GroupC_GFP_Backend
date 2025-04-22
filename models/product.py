@@ -31,12 +31,15 @@ class Products(db.Model):
     updated_at: datetime = db.Column(db.DateTime, default=crono.now, onupdate=crono.now)
 
     # Relationships
-    categories = db.relationship("ProductCategory", backref="product", lazy=True)
-    images = db.relationship("ProductImage", backref="product", lazy=True)
-    order_items = db.relationship("OrderItem", backref="product", lazy=True)
-    cart_items = db.relationship("CartItem", backref="product", lazy=True)
-    feedback = db.relationship("Feedback", backref="product", lazy=True)
-    wishlist_items = db.relationship("WishlistItem", backref="product", lazy=True)
+    categories = db.relationship("ProductCategories", backref="product", lazy=True)
+    images = db.relationship("ProductImages", backref="product", lazy=True)
+    order_items = db.relationship("OrderItems", backref="product", lazy=True)
+    cart_items = db.relationship("CartItems", backref="product", lazy=True)
+    feedback = db.relationship("Feedbacks", backref="product", lazy=True)
+    wishlist_items = db.relationship("WishlistItems", backref="product", lazy=True)
 
     def __repr__(self):
         return f"<Product {self.name}>"
+
+# This alias exists ONLY to satisfy `db.relationship("Product")`
+Product = Products

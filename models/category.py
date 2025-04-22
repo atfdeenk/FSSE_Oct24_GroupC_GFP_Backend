@@ -22,8 +22,8 @@ class Categories(db.Model):
     updated_at: datetime = db.Column(db.DateTime, default=crono.now, onupdate=crono.now)
 
     # Relationships
-    parent = db.relationship("Category", remote_side=[id], backref="subcategories")
-    products = db.relationship("ProductCategory", backref="category", lazy=True)
+    parent = db.relationship("Categories", remote_side=[id], backref="subcategories")
+    products = db.relationship("ProductCategories", backref="category", lazy=True)
 
     def __repr__(self):
         return f"<Category {self.name}>"

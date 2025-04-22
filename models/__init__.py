@@ -14,6 +14,11 @@ from .feedback import Feedbacks
 
 from .wishlist_item import WishlistItems
 
+
+Product = Products
+ProductCategory = ProductCategories  # <-- ADD THIS LINE
+
+
 __all__ = [
     "Users",
     "Categories",

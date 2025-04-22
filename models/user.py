@@ -1,6 +1,7 @@
 from instance.database import db
 from datetime import datetime
 from shared import crono
+from models.product import Products as Product
 import enum
 
 
@@ -37,12 +38,12 @@ class Users(db.Model):
     updated_at: datetime = db.Column(db.DateTime, default=crono.now, onupdate=crono.now)
 
     # Relationships
-    products = db.relationship("Product", backref="vendor", lazy=True)
-    categories = db.relationship("Category", backref="owner", lazy=True)
+    products = db.relationship("Products", backref="vendor", lazy=True)
+    categories = db.relationship("Categories", backref="owner", lazy=True)
     cart = db.relationship("Cart", uselist=False, backref="user")
-    orders = db.relationship("Order", back_populates="user", lazy=True)
-    feedback = db.relationship("Feedback", back_populates="user", lazy=True)
-    wishlist_items = db.relationship("WishlistItem", backref="user", lazy=True)
+    orders = db.relationship("Orders", back_populates="user", lazy=True)
+    feedback = db.relationship("Feedbacks", back_populates="user", lazy=True)
+    wishlist_items = db.relationship("WishlistItems", backref="user", lazy=True, foreign_keys="WishlistItems.user_id")
 
     def __repr__(self):
         return f"<User {self.username}>"
