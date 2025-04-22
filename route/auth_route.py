@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 from services import user_services
+from services.user_services import get_me_service
 from shared.auth import role_required  
 
 auth_bp = Blueprint("auth_bp", __name__)
@@ -33,18 +34,22 @@ def me():
     return jsonify(user_info), 200
 
 # Private: Only the user themselves or admin can update a user
-@auth_bp.route("/users/<int:user_id>", methods=["PUT"])
+@auth_bp.route("/users/<int:user_id>", methods=["PUT", "PATCH"])
 @jwt_required()
 @role_required("admin", "vendor", "customer")  # Optional: restrict to known roles
 def update_user(user_id):
     data = request.get_json()
-    current_user = get_jwt_identity()
+    
+    current_user_id = int(get_jwt_identity())
+    current_user_role = get_jwt().get("role")
+    user, error = user_services.update_user(user_id, data, current_user_id, current_user_role)
 
-    user, error = user_services.update_user(user_id, data, current_user)
+
     if error:
         return jsonify({"msg": error}), 403 if error == "Unauthorized" else 404
 
     return jsonify({"msg": "User updated successfully"}), 200
+
 
 @auth_bp.route("/users", methods=["GET"])
 @jwt_required()

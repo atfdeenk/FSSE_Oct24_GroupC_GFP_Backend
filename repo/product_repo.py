@@ -9,14 +9,19 @@ def get_product_by_id(product_id):
     return Products.query.get(product_id)
 
 def create_product(data):
-    product = Products(**data)
-    db.session.add(product)
     try:
+        print("[DEBUG] raw data:", data)
+        product = Products(**data)
+        db.session.add(product)
         db.session.commit()
+        print("[DEBUG] product created:", product)
         return product
-    except IntegrityError:
+    except Exception as e:
         db.session.rollback()
-        return None
+        print("[DB ERROR]", e)
+        raise e
+
+
 
 def update_product(product_id, data):
     product = Products.query.get(product_id)
