@@ -1,6 +1,8 @@
 import pytest
 from config.settings import create_app
-from instance.database import db  # Correct import for db
+from instance.database import db
+from flask_jwt_extended import create_access_token
+from models.user import Users
 
 @pytest.fixture(scope="function")
 def app():
@@ -24,13 +26,55 @@ def app():
 
 @pytest.fixture(scope="function")
 def init_db(app):
-    """Create the database tables before tests and drop them afterward."""
+    """Create the database tables and seed a test vendor user."""
     with app.app_context():
-        db.create_all()  # Create tables in test database
+        db.create_all()
+
+        # Seed test vendor user
+        vendor = Users(
+                id=1,
+                username="vendoruser",
+                first_name="Test",
+                last_name="Vendor",
+                email="vendor@mail.com",
+                phone="081234567890",
+                password_hash="test",  # acceptable for test
+                date_of_birth="1990-01-01",
+                address="Test Street 123",
+                city="Jakarta",
+                state="DKI Jakarta",
+                country="Indonesia",
+                zip_code="12345",
+                image_url="https://example.com/image.png",
+                role="vendor",
+                bank_account="1234567890",
+                bank_name="BNI",
+                is_active=True
+            )
+
+        
+        db.session.add(vendor)
+        db.session.commit()
+
         yield
-        db.drop_all()  # Clean up after test
+        db.drop_all()
 
 @pytest.fixture
 def client(app, init_db):
     """Create a test client for the Flask application."""
     return app.test_client()
+
+@pytest.fixture
+def vendor_token(app):
+    with app.app_context():
+        return create_access_token(identity=1, additional_claims={"role": "vendor"})
+
+@pytest.fixture
+def user_token(app):
+    with app.app_context():
+        return create_access_token(identity=2, additional_claims={"role": "user"})
+
+@pytest.fixture
+def admin_token(app):
+    with app.app_context():
+        return create_access_token(identity=3, additional_claims={"role": "admin"})
