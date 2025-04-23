@@ -1,5 +1,6 @@
 from instance.database import db
 from models.product import Products
+from models.product_category import ProductCategories
 from sqlalchemy.exc import IntegrityError
 
 def get_all_products():
@@ -11,8 +12,15 @@ def get_product_by_id(product_id):
 def create_product(data):
     try:
         print("[DEBUG] raw data:", data)
+        category_ids = data.pop("category_ids", [])  # Extract category_ids
         product = Products(**data)
         db.session.add(product)
+        db.session.flush()  # Get product.id before commit
+
+        # Create product-category mappings
+        for cid in category_ids:
+            db.session.add(ProductCategories(product_id=product.id, category_id=cid))
+
         db.session.commit()
         print("[DEBUG] product created:", product)
         return product
