@@ -168,7 +168,7 @@ def test_update_profile(client, app, sample_user_data):
         # Update profile using PATCH
         update_data = {
             "first_name": "Janet",
-            "phone": "081234567890"
+            "phone": "081234567892"  # Use a unique phone number to avoid UNIQUE constraint error
         }
         response = client.patch(f"/users/{user.id}", json=update_data, headers=headers)
 
@@ -183,4 +183,4 @@ def test_update_profile(client, app, sample_user_data):
         
         updated_user = db.session.get(Users, user.id)
         assert updated_user.first_name == "Janet"
-        assert updated_user.phone == "081234567890"
+        assert updated_user.phone == "081234567892"
