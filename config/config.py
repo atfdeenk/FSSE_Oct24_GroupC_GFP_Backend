@@ -1,5 +1,10 @@
+import os
+
 class LocalConfig:
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = "sqlite:///local.db"
+    SQLALCHEMY_DATABASE_URI = os.getenv(
+        "DATABASE_URL",
+        f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT', 5432)}/{os.getenv('DB_NAME')}"
+    )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    JWT_SECRET_KEY = "8493dc8a7194633818aa41f84be46e3d99fb98f86163d3bbdd35eb6ee87345e8"
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "testing-secret-key")

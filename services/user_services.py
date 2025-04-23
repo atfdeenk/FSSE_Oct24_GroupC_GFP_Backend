@@ -16,7 +16,11 @@ def create_user(data):
         del data["password"]
 
         # ✅ Convert role string to Enum
-        data["role"] = RoleType(data["role"])
+        try:
+            data["role"] = RoleType(data["role"])
+        except KeyError:
+            raise ValueError("Missing required field: role")
+
 
         user = user_repo.create_user(data)
         return user

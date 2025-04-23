@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from services import cart_services as cart_service
 from services import cart_item_services as cart_item_service
 from shared.auth import role_required
@@ -51,6 +51,8 @@ def get_cart_items():
 @jwt_required()
 @role_required("customer")
 def update_item(item_id):
+    user_id = int(get_jwt_identity())
+    role = get_jwt().get("role")
     data = request.get_json()
     quantity = data.get("quantity")
     updated = cart_item_service.update_item(item_id, quantity)
@@ -65,6 +67,8 @@ def update_item(item_id):
 @jwt_required()
 @role_required("customer")
 def delete_item(item_id):
+    user_id = int(get_jwt_identity())
+    role = get_jwt().get("role")
     success = cart_item_service.delete_item(item_id)
     if not success:
         return jsonify({"message": "Cart item not found"}), 404
