@@ -3,6 +3,7 @@ from repo import user_repo
 from models.user import Users
 from sqlalchemy.exc import IntegrityError
 
+
 def create_user(data):
     try:
         hashed_password = generate_password_hash(data["password"])
@@ -13,14 +14,17 @@ def create_user(data):
     except IntegrityError:
         return None
 
+
 def authenticate(email, password):
     user = user_repo.get_user_by_email(email)
     if user and check_password_hash(user.password_hash, password):
         return user
     return None
 
+
 def get_user_by_id(user_id):
     return user_repo.get_user_by_id(user_id)
+
 
 def update_user(user_id, data, current_user):
     user = user_repo.get_user_by_id(user_id)
@@ -41,6 +45,7 @@ def update_user(user_id, data, current_user):
     updated_user = user_repo.update_user(user, data)
     return updated_user, None
 
+
 def get_all_users():
     return user_repo.get_all_users()
 
@@ -56,4 +61,3 @@ def delete_user(user_id, current_user):
 
     user_repo.delete_user(user)
     return user, None
-
