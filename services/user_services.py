@@ -6,14 +6,22 @@ from flask_jwt_extended import get_jwt_identity
 from repo.user_repo import get_user_by_id
 from flask import jsonify
 
+from models.user import RoleType
+
 def create_user(data):
     try:
+        # ✅ Hash the password
         hashed_password = generate_password_hash(data["password"])
         data["password_hash"] = hashed_password
-        del data["password"]  # remove plain password
+        del data["password"]
+
+        # ✅ Convert role string to Enum
+        data["role"] = RoleType(data["role"])
+
         user = user_repo.create_user(data)
         return user
-    except IntegrityError:
+    except IntegrityError as e:
+        print("IntegrityError:", e)  # Debug output
         return None
 
 def authenticate(email, password):
