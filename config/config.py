@@ -1,0 +1,5 @@
+class LocalConfig:
+    DEBUG = True
+    SQLALCHEMY_DATABASE_URI = "sqlite:///local.db"
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    JWT_SECRET_KEY = "8493dc8a7194633818aa41f84be46e3d99fb98f86163d3bbdd35eb6ee87345e8"
