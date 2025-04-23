@@ -35,9 +35,9 @@ def test_create_product_authorized(client, vendor_token):
         print("Response JSON:", res.get_json())
     assert res.status_code == 201
 
-def test_create_product_unauthorized_role(client, user_token):
+def test_create_product_unauthorized_role(client, customer_token):
     headers = {
-        "Authorization": f"Bearer {user_token}",
+        "Authorization": f"Bearer {customer_token}",
         "Content-Type": "application/json"
     }
     payload = {
