@@ -1,9 +1,11 @@
 from flask import Blueprint, request, jsonify
 from services import product_category_services as product_category_service
+from shared.auth import role_required
 
 product_category_bp = Blueprint("product_category_bp", __name__)
 
 @product_category_bp.route("/products/<int:product_id>/categories", methods=["POST"])
+@role_required("vendor")
 def add_category(product_id):
     data = request.get_json()
     category_id = data.get("category_id")
@@ -20,6 +22,7 @@ def add_category(product_id):
     }), 201
 
 @product_category_bp.route("/products/<int:product_id>/categories", methods=["GET"])
+@role_required("vendor")
 def get_categories(product_id):
     relations = product_category_service.get_product_categories(product_id)
     return jsonify([
@@ -28,6 +31,7 @@ def get_categories(product_id):
     ]), 200
 
 @product_category_bp.route("/products/<int:product_id>/categories/<int:category_id>", methods=["DELETE"])
+@role_required("vendor")
 def delete_category(product_id, category_id):
     success = product_category_service.remove_category(product_id, category_id)
     if not success:

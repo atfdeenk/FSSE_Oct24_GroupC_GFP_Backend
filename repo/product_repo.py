@@ -1,6 +1,7 @@
 from instance.database import db
 from models.product import Products
 from models.product_category import ProductCategories
+from models.cart_item import CartItems
 from sqlalchemy.exc import IntegrityError
 
 def get_all_products():
@@ -45,6 +46,10 @@ def delete_product(product_id):
     product = Products.query.get(product_id)
     if not product:
         return None
+
+    # ✅ Delete all cart items related to this product
+    CartItems.query.filter_by(product_id=product_id).delete()
+
     db.session.delete(product)
     db.session.commit()
     return product

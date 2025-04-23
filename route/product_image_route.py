@@ -5,7 +5,7 @@ from shared.auth import role_required
 product_image_bp = Blueprint("product_image_bp", __name__)
 
 @product_image_bp.route("/products/<int:product_id>/images", methods=["POST"])
-@role_required("vendor", "admin")
+@role_required("vendor")
 def create_images(product_id):
     data = request.get_json()
     images = product_image_service.add_images(product_id, data)
@@ -29,7 +29,7 @@ def get_images(product_id):
     }), 200
 
 @product_image_bp.route("/products/<int:product_id>/images", methods=["PUT"])
-@role_required("vendor", "admin")
+@role_required("vendor")
 def update_images(product_id):
     data = request.get_json()
     updated = product_image_service.update_images(product_id, data)
@@ -43,7 +43,7 @@ def update_images(product_id):
     }), 200
 
 @product_image_bp.route("/products/<int:product_id>/images", methods=["DELETE"])
-@role_required("vendor", "admin")
+@role_required("vendor")
 def delete_images(product_id):
     success = product_image_service.delete_images(product_id)
     if not success:

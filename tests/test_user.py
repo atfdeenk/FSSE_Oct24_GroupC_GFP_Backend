@@ -121,9 +121,12 @@ def test_get_me(client, app, sample_user_data):
         print(f"Response Data: {response.data}")
 
         # Assertions to verify the response
+       # Assert important fields exist and match
         assert response.status_code == 200
-        # The response appears to be just the user ID as a string
-        assert response.json == str(user.id)
+        assert response.json["id"] == user.id
+        assert response.json["email"] == user.email
+        assert response.json["role"] == user.role.value
+
 
 def test_me_unauthorized(client):
     """Test accessing /me endpoint without token."""
