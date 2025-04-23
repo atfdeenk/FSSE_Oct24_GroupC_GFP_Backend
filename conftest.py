@@ -78,9 +78,9 @@ def vendor_token(app):
         return create_access_token(identity=str(1), additional_claims={"role": "vendor"})
 
 @pytest.fixture
-def user_token(app):
+def customer_token(app):
     with app.app_context():
-        return create_access_token(identity=str(2), additional_claims={"role": "user"})
+        return create_access_token(identity=str(2), additional_claims={"role": "customer"})
 
 @pytest.fixture
 def admin_token(app):
