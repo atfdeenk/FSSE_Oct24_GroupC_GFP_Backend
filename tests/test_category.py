@@ -7,46 +7,17 @@ from instance.database import db
 from models.user import RoleType
 
 
-def create_test_vendor(app):
-    with app.app_context():
-        vendor = Users.query.filter_by(id=1).first()
-        if not vendor:
-            vendor = Users(
-                id=1,
-                username="testvendor",
-                first_name="Test",
-                last_name="Vendor",
-                email="vendor@example.com",
-                phone="1234567890",
-                password_hash="hashedpassword",
-                date_of_birth="1990-01-01",
-                address="123 Test St",
-                city="Testville",
-                state="Teststate",
-                country="Testland",
-                zip_code="12345",
-                image_url="http://example.com/image.jpg",
-                role=RoleType.vendor,
-                bank_account="123456789",
-                bank_name="Test Bank",
-                is_active=True,
-            )
-            db.session.add(vendor)
-            db.session.commit()
-        return vendor
+import json
+from flask_jwt_extended import create_access_token
+from models.user import Users
+from instance.database import db
+
+from models.user import RoleType
 
 
-def get_auth_header(client):
-    # Create a test user payload with vendor role
-    test_user = {"id": 1, "role": "vendor"}
-    token = create_access_token(identity=test_user)
-    return {"Authorization": f"Bearer {token}"}
-
-
-def test_create_category(client, app):
+def test_create_category(client, vendor_token):
     """Test creating a new category."""
-    create_test_vendor(app)
-    headers = get_auth_header(client)
+    headers = {"Authorization": f"Bearer {vendor_token}"}
     response = client.post(
         "/categories",
         json={
@@ -72,11 +43,9 @@ def test_get_all_categories(client):
     assert isinstance(data, list)
 
 
-def test_get_category_by_id(client, app):
+def test_get_category_by_id(client, vendor_token):
     """Test getting a specific category by ID."""
-    # First, create a category (skip if already done by another test)
-    create_test_vendor(app)
-    headers = get_auth_header(client)
+    headers = {"Authorization": f"Bearer {vendor_token}"}
     client.post(
         "/categories",
         json={
@@ -94,10 +63,9 @@ def test_get_category_by_id(client, app):
         assert "name" in data
 
 
-def test_update_category(client, app):
+def test_update_category(client, vendor_token):
     """Test updating a category."""
-    create_test_vendor(app)
-    headers = get_auth_header(client)
+    headers = {"Authorization": f"Bearer {vendor_token}"}
     # Ensure category exists before updating
     client.post(
         "/categories",
@@ -121,10 +89,9 @@ def test_update_category(client, app):
         assert data["msg"] == "Category updated"
 
 
-def test_delete_category(client, app):
+def test_delete_category(client, vendor_token):
     """Test deleting a category."""
-    create_test_vendor(app)
-    headers = get_auth_header(client)
+    headers = {"Authorization": f"Bearer {vendor_token}"}
     # Ensure category exists before deleting
     client.post(
         "/categories",

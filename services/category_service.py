@@ -27,8 +27,16 @@ def update_category(category_id, data, current_user):
     if not category:
         return None, "Category not found"
 
+    # Handle current_user as string or dict
+    if isinstance(current_user, str):
+        current_user_id = int(current_user)
+        current_user_role = None
+    else:
+        current_user_id = current_user.get("id")
+        current_user_role = current_user.get("role")
+
     # Only the owner or admin can update
-    if category.vendor_id != current_user["id"] and current_user["role"] != "admin":
+    if category.vendor_id != current_user_id and current_user_role != "admin":
         return None, "Unauthorized"
 
     updated_category = category_repo.update_category(category, data)
@@ -40,8 +48,16 @@ def delete_category(category_id, current_user):
     if not category:
         return None, "Category not found"
 
+    # Handle current_user as string or dict
+    if isinstance(current_user, str):
+        current_user_id = int(current_user)
+        current_user_role = None
+    else:
+        current_user_id = current_user.get("id")
+        current_user_role = current_user.get("role")
+
     # Only the owner or admin can delete
-    if category.vendor_id != current_user["id"] and current_user["role"] != "admin":
+    if category.vendor_id != current_user_id and current_user_role != "admin":
         return None, "Unauthorized"
 
     category_repo.delete_category(category)
