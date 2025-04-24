@@ -29,3 +29,4 @@ ENV/
 # Local configuration files
 config/local.py
 config/remote.py
+uv.lock
