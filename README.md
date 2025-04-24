@@ -68,3 +68,58 @@ uv run flask db upgrade
 ```
 
 ---
+
+{
+"username": "vendortest1",
+"first_name": "Vendor",
+"last_name": "Test",
+"email": "vendortest1@example.com",
+"phone": "08110000001",
+"password": "vendorpass123",
+"date_of_birth": "1987-04-21",
+"address": "Jl. Vendor No.1",
+"city": "Bandung",
+"state": "Jawa Barat",
+"country": "Indonesia",
+"zip_code": "40111",
+"image_url": "http://example.com/vendor1.jpg",
+"role": "vendor",
+"bank_account": "111222333",
+"bank_name": "Bank Mandiri"
+}
+{
+"username": "customertest1",
+"first_name": "Customer",
+"last_name": "Test",
+"email": "customertest1@example.com",
+"phone": "08110000002",
+"password": "customerpass123",
+"date_of_birth": "1992-06-10",
+"address": "Jl. Customer No.2",
+"city": "Jakarta",
+"state": "DKI Jakarta",
+"country": "Indonesia",
+"zip_code": "10110",
+"image_url": "http://example.com/customer1.jpg",
+"role": "customer",
+"bank_account": "444555666",
+"bank_name": "Bank BCA"
+}
+{
+"username": "admintest1",
+"first_name": "Admin",
+"last_name": "Test",
+"email": "admintest1@example.com",
+"phone": "08110000003",
+"password": "adminpass123",
+"date_of_birth": "1980-01-01",
+"address": "Jl. Admin No.3",
+"city": "Surabaya",
+"state": "Jawa Timur",
+"country": "Indonesia",
+"zip_code": "60222",
+"image_url": "http://example.com/admin1.jpg",
+"role": "admin",
+"bank_account": "777888999",
+"bank_name": "Bank BRI"
+}
