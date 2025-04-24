@@ -61,7 +61,7 @@ def create_category():
     try:
         # Debug log for incoming data
         print(f"Create category request data: {data}")
-        category = category_service.create_category(data, current_user)
+        category, error = category_service.create_category(data, current_user)
     except Exception as e:
         error = str(e)
         print(f"Error creating category: {error}")

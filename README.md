@@ -71,11 +71,11 @@ uv run flask db upgrade
 
 {
 "username": "vendortest1",
-"first_name": "Vendor",
+"first_name": "Vendor1",
 "last_name": "Test",
 "email": "vendortest1@example.com",
 "phone": "08110000001",
-"password": "vendorpass123",
+"password": "vendorpass123", / pass123
 "date_of_birth": "1987-04-21",
 "address": "Jl. Vendor No.1",
 "city": "Bandung",
@@ -93,7 +93,7 @@ uv run flask db upgrade
 "last_name": "Test",
 "email": "customertest1@example.com",
 "phone": "08110000002",
-"password": "customerpass123",
+"password": "customerpass123", / pass123
 "date_of_birth": "1992-06-10",
 "address": "Jl. Customer No.2",
 "city": "Jakarta",
@@ -111,7 +111,7 @@ uv run flask db upgrade
 "last_name": "Test",
 "email": "admintest1@example.com",
 "phone": "08110000003",
-"password": "adminpass123",
+"password": "adminpass123", /pass123
 "date_of_birth": "1980-01-01",
 "address": "Jl. Admin No.3",
 "city": "Surabaya",

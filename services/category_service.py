@@ -7,11 +7,17 @@ from models.category import Categories
 
 def create_category(data, current_user):
     try:
-        data["vendor_id"] = current_user["id"]  # associate with logged-in vendor
+        # Handle current_user as string or dict
+        if isinstance(current_user, str):
+            data["vendor_id"] = int(current_user)
+        else:
+            data["vendor_id"] = current_user["id"]  # associate with logged-in vendor
         category = category_repo.create_category(data)
-        return category
-    except IntegrityError:
-        return None
+        return category, None
+    except IntegrityError as e:
+        return None, str(e)
+    except Exception as e:
+        return None, str(e)
 
 
 def get_all_categories():
