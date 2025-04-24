@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from shared.auth import role_required
-from services import category_services
+from services import category_service
 
 category_bp = Blueprint("category_bp", __name__)
 
@@ -9,7 +9,7 @@ category_bp = Blueprint("category_bp", __name__)
 # Public: Get all categories
 @category_bp.route("/categories", methods=["GET"])
 def get_all_categories():
-    categories = category_services.get_all_categories()
+    categories = category_service.get_all_categories()
     return (
         jsonify(
             [
@@ -31,7 +31,7 @@ def get_all_categories():
 # Public: Get a specific category by ID
 @category_bp.route("/categories/<int:category_id>", methods=["GET"])
 def get_category(category_id):
-    category = category_services.get_category_by_id(category_id)
+    category = category_service.get_category_by_id(category_id)
     if not category:
         return jsonify({"msg": "Category not found"}), 404
     return (
@@ -61,7 +61,7 @@ def create_category():
     try:
         # Debug log for incoming data
         print(f"Create category request data: {data}")
-        category = category_services.create_category(data, current_user)
+        category = category_service.create_category(data, current_user)
     except Exception as e:
         error = str(e)
         print(f"Error creating category: {error}")
@@ -77,7 +77,7 @@ def create_category():
 def update_category(category_id):
     data = request.get_json()
     current_user = get_jwt_identity()
-    category, error = category_services.update_category(category_id, data, current_user)
+    category, error = category_service.update_category(category_id, data, current_user)
     if error:
         return jsonify({"msg": error}), 403 if error == "Unauthorized" else 404
     return jsonify({"msg": "Category updated"}), 200
@@ -89,7 +89,7 @@ def update_category(category_id):
 @role_required("vendor", "admin")
 def delete_category(category_id):
     current_user = get_jwt_identity()
-    category, error = category_services.delete_category(category_id, current_user)
+    category, error = category_service.delete_category(category_id, current_user)
     if error:
         return jsonify({"msg": error}), 403 if error == "Unauthorized" else 404
     return jsonify({"msg": "Category deleted"}), 200
