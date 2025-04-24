@@ -26,10 +26,33 @@ def serialize_product(product: Products) -> dict:
     }
 
 
-def get_all_serialized_products():
-    products = product_repo.get_all_products()
-    return [serialize_product(p) for p in products]
+def get_all_serialized_products(search=None, category_id=None, page=1, limit=10, sort_by="created_at", sort_order="desc"):
+    products, total = product_repo.get_all_products_filtered(
+        search=search,
+        category_id=category_id,
+        page=page,
+        limit=limit,
+        sort_by=sort_by,
+        sort_order=sort_order
+    )
+    return {
+        "products": [serialize_product(p) for p in products],
+        "total": total,
+        "page": page,
+        "limit": limit
+    }
 
+
+def get_paginated_serialized_products(page: int, limit: int):
+    paginated = product_repo.get_paginated_products(page, limit)
+    products = [serialize_product(p) for p in paginated.items]
+    return {
+        "products": products,
+        "total": paginated.total,
+        "page": paginated.page,
+        "pages": paginated.pages,
+        "limit": paginated.per_page,
+    }
 
 def get_serialized_product_by_id(product_id: int):
     product = product_repo.get_product_by_id(product_id)
@@ -84,3 +107,5 @@ def delete_product_and_return_message(product_id: int):
     if not product:
         return None
     return {"message": "Product deleted"}
+
+

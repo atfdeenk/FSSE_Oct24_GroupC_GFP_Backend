@@ -4,10 +4,14 @@ from models.product import Products
 from models.product_category import ProductCategories
 from instance.database import db
 
-def test_get_all_products(client):
+def test_get_all_products(client, seed_product):
     res = client.get("/products")
     assert res.status_code == 200
-    assert isinstance(res.get_json(), list)
+    data = res.get_json()
+    assert isinstance(data["products"], list)  # Access "products" key
+    assert "total" in data
+    assert data["total"] >= 1
+
 
 def test_create_product_authorized(client, vendor_token):
     headers = {
@@ -86,3 +90,50 @@ def test_delete_product_as_admin(client, admin_token):
 
     db.session.commit()
     product_id = product.id
+
+
+def test_update_product(client, vendor_token):
+    headers = {
+        "Authorization": f"Bearer {vendor_token}",
+        "Content-Type": "application/json"
+    }
+
+    # Create product first
+    payload = {
+        "name": "To Update",
+        "slug": "to-update",
+        "description": "Old Desc",
+        "currency": "IDR",
+        "price": "20000.00",
+        "discount_percentage": 0,
+        "stock_quantity": 15,
+        "unit_quantity": "pcs",
+        "location": "Medan",
+        "image_url": "http://example.com/update.jpg",
+        "featured": False,
+        "flash_sale": False
+    }
+    create_res = client.post("/products", json=payload, headers=headers)
+    product_id = create_res.get_json()["id"]
+
+    # Update
+    update_payload = {
+        "description": "Updated Desc",
+        "price": "22000.00"
+    }
+    update_res = client.put(f"/products/{product_id}", json=update_payload, headers=headers)
+    assert update_res.status_code == 200
+    assert update_res.get_json()["description"] == "Updated Desc"
+    assert float(update_res.get_json()["price"]) == 22000.00
+
+def test_create_product_missing_fields(client, vendor_token):
+    headers = {
+        "Authorization": f"Bearer {vendor_token}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "name": "Incomplete Product"
+        # Missing all required fields
+    }
+    res = client.post("/products", json=payload, headers=headers)
+    assert res.status_code == 400 or res.status_code == 422

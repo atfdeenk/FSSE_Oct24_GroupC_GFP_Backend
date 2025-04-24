@@ -13,7 +13,25 @@ product_bp = Blueprint('product_bp', __name__)
 
 @product_bp.route("/products", methods=["GET"])
 def get_all_products():
-    return jsonify(get_all_serialized_products()), 200
+    search = request.args.get("search")
+    category_id = request.args.get("category_id", type=int)
+    page = request.args.get("page", default=1, type=int)
+    limit = request.args.get("limit", default=10, type=int)
+    sort_by = request.args.get("sort_by", default="created_at", type=str)
+    sort_order = request.args.get("sort_order", default="desc", type=str)
+
+
+    products = get_all_serialized_products(
+        search=search,
+        category_id=category_id,
+        page=page,
+        limit=limit,
+        sort_by=sort_by,
+        sort_order=sort_order
+    )
+
+    return jsonify(products), 200
+
 
 @product_bp.route("/products/<int:product_id>", methods=["GET"])
 def get_product(product_id):

@@ -1,6 +1,7 @@
 from instance.database import db
 from datetime import datetime
 from shared import crono
+from models.category import Categories
 
 
 class Products(db.Model):
@@ -32,6 +33,7 @@ class Products(db.Model):
 
     # Relationships
     categories = db.relationship("ProductCategories", backref="product", lazy=True)
+    categories_linked = db.relationship("Categories", secondary="product_categories", backref=db.backref("products_linked", lazy="joined", overlaps="products"), lazy="joined", overlaps="categories,product")
     images = db.relationship("ProductImages", backref="product", lazy=True)
     order_items = db.relationship("OrderItems", backref="product", lazy=True)
     cart_items = db.relationship("CartItems", backref="product", lazy=True)
