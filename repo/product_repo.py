@@ -53,12 +53,14 @@ def delete_product(product_id):
     if not product:
         return None
 
-    # ✅ Delete all cart items related to this product
-    CartItems.query.filter_by(product_id=product_id).delete()
+    # ❌ REMOVE this line; let cascade handle it
+    # ProductCategories.query.filter_by(product_id=product_id).delete()
 
+    CartItems.query.filter_by(product_id=product_id).delete()
     db.session.delete(product)
     db.session.commit()
     return product
+
 
 def get_all_products_filtered(search=None, category_id=None, page=1, limit=10, sort_by="created_at", sort_order="desc"):
     query = Products.query

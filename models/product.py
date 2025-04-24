@@ -32,8 +32,30 @@ class Products(db.Model):
     updated_at: datetime = db.Column(db.DateTime, default=crono.now, onupdate=crono.now)
 
     # Relationships
-    categories = db.relationship("ProductCategories", backref="product", lazy=True)
-    categories_linked = db.relationship("Categories", secondary="product_categories", backref=db.backref("products_linked", lazy="joined", overlaps="products"), lazy="joined", overlaps="categories,product")
+    # For ProductCategories join table
+    categories = db.relationship(
+        "ProductCategories",
+        lazy=True,
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        overlaps="categories_linked,products_linked,category"
+    )
+
+
+    categories_linked = db.relationship(
+        "Categories",
+        secondary="product_categories",
+        backref=db.backref(
+            "products_linked",
+            lazy="joined",
+            overlaps="categories,categories_linked,product"
+        ),
+        lazy="joined",
+        overlaps="categories,product,products"
+    )
+
+
+    
     images = db.relationship("ProductImages", backref="product", lazy=True)
     order_items = db.relationship("OrderItems", backref="product", lazy=True)
     cart_items = db.relationship("CartItems", backref="product", lazy=True)

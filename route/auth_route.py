@@ -71,7 +71,7 @@ def me():
 # Private: Only the user themselves or admin can update a user
 @auth_bp.route("/users/<int:user_id>", methods=["PUT", "PATCH"])
 @jwt_required()
-@role_required("vendor", "customer")  # Optional: restrict to known roles
+@role_required("vendor", "customer", "admin")  # Optional: restrict to known roles
 def update_user(user_id):
     data = request.get_json()
     
@@ -88,7 +88,7 @@ def update_user(user_id):
 
 @auth_bp.route("/users", methods=["GET"])
 @jwt_required()
-@role_required("vendor")  # Admin-only
+@role_required("admin")  # Admin-only
 def get_all_users():
     users = user_services.get_all_users()
     return jsonify([{
@@ -102,7 +102,7 @@ def get_all_users():
 
 @auth_bp.route("/users/<int:user_id>", methods=["DELETE"])
 @jwt_required()
-@role_required("vendor")
+@role_required("vendor", "customer", "admin")  # Optional: restrict to known roles
 def delete_user(user_id):
     current_user = get_jwt_identity()
     user, error = user_services.delete_user(user_id, current_user)

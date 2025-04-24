@@ -43,7 +43,7 @@ def update_images(product_id):
     }), 200
 
 @product_image_bp.route("/products/<int:product_id>/images", methods=["DELETE"])
-@role_required("vendor")
+@role_required("vendor", "admin")
 def delete_images(product_id):
     success = product_image_service.delete_images(product_id)
     if not success:

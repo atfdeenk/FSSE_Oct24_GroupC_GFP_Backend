@@ -42,14 +42,14 @@ def get_product(product_id):
 
 @product_bp.route("/products", methods=["POST"])
 @jwt_required()
-@role_required("vendor", "admin")
+@role_required("vendor")
 def create_product():
-    print("🟢 ENTERED PRODUCT POST ROUTE")
+    
     if not request.is_json:
         print("❌ Not JSON")
         return jsonify({"msg": "Invalid content type"}), 400
     data = request.get_json()
-    print("✅ JSON payload received:", data)
+    
     product = create_product_with_serialization(data)
     if not product:
         return jsonify({"message": "Error creating product (possibly slug conflict)"}), 400
@@ -58,7 +58,7 @@ def create_product():
 
 @product_bp.route("/products/<int:product_id>", methods=["PUT"])
 @jwt_required()
-@role_required("vendor", "admin")
+@role_required("vendor")
 def update_product(product_id):
     data = request.get_json()
     product = update_product_with_serialization(product_id, data)
