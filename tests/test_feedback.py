@@ -21,8 +21,8 @@ def test_create_feedback(client, app):
         user = create_test_user(app)
         product = create_test_product(app)
         user_email = user["email"]
-        product_id = product.id
-        headers = get_auth_header(user_email)
+        product_id = product["id"]
+    headers = get_auth_header(user_email)
     # product_id extracted inside app context
 
     response = create_feedback(client, headers, product_id)
@@ -37,9 +37,9 @@ def test_get_feedback_by_product(client, app):
         user = create_test_user(app)
         product = create_test_product(app)
         user_email = user["email"]
-        product_id = product.id
-        headers = get_auth_header(user_email)
-        create_feedback(client, headers, product_id)
+        product_id = product["id"]
+    headers = get_auth_header(user_email)
+    create_feedback(client, headers, product_id)
     # product_id extracted inside app context
 
     response = client.get(f"/feedback/product/{product_id}")
@@ -54,10 +54,10 @@ def test_get_feedback_by_user(client, app):
         user = create_test_user(app)
         product = create_test_product(app)
         user_email = user["email"]
-        product_id = product.id
+        product_id = product["id"]
         user_id = user["id"]
-        headers = get_auth_header(user_email)
-        create_feedback(client, headers, product_id)
+    headers = get_auth_header(user_email)
+    create_feedback(client, headers, product_id)
     # product_id extracted inside app context
 
     response = client.get(f"/feedback/user/{user_id}", headers=headers)
@@ -72,9 +72,9 @@ def test_get_all_feedback(client, app):
         user = create_test_user(app)
         product = create_test_product(app)
         user_email = user["email"]
-        product_id = product.id
-        headers = get_auth_header(user_email)
-        create_feedback(client, headers, product_id)
+        product_id = product["id"]
+    headers = get_auth_header(user_email)
+    create_feedback(client, headers, product_id)
     # product_id extracted inside app context
 
     response = client.get("/feedback")
@@ -89,10 +89,10 @@ def test_delete_feedback(client, app):
         user = create_test_user(app)
         product = create_test_product(app)
         user_email = user["email"]
-        product_id = product.id
-        headers = get_auth_header(user_email)
-        create_resp = create_feedback(client, headers, product_id)
-        feedback_id = create_resp.get_json()["id"]
+        product_id = product["id"]
+    headers = get_auth_header(user_email)
+    create_resp = create_feedback(client, headers, product_id)
+    feedback_id = create_resp.get_json()["id"]
     # product_id extracted inside app context
 
     delete_resp = client.delete(f"/feedback/{feedback_id}", headers=headers)

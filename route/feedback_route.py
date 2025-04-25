@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from services import feedback_services
+from models.user import Users
 
 feedback_bp = Blueprint("feedback_bp", __name__)
 
@@ -8,12 +9,12 @@ feedback_bp = Blueprint("feedback_bp", __name__)
 @feedback_bp.route("/feedback", methods=["POST"])
 @jwt_required()
 def create_feedback():
+    current_user_email = get_jwt_identity()
     data = request.get_json()
     if not data:
         return jsonify({"msg": "Invalid request"}), 400
 
-    current_user = get_jwt_identity()
-    feedback = feedback_services.create_feedback(data, current_user)
+    feedback = feedback_services.create_feedback(data, current_user_email)
     return jsonify({"msg": "Feedback submitted", "id": feedback.id}), 201
 
 
@@ -41,8 +42,10 @@ def get_feedback_by_product(product_id):
 @feedback_bp.route("/feedback/user/<int:user_id>", methods=["GET"])
 @jwt_required()
 def get_feedback_by_user(user_id):
-    current_user = get_jwt_identity()
-    if current_user != user_id:
+    current_user_email = get_jwt_identity()
+    user = Users.query.filter_by(email=current_user_email).first()
+
+    if not user or user.id != user_id:
         return jsonify({"msg": "Unauthorized"}), 403
 
     feedback_list = feedback_services.get_feedback_by_user(user_id)
@@ -90,8 +93,8 @@ def get_all_feedback():
 @feedback_bp.route("/feedback/<int:feedback_id>", methods=["DELETE"])
 @jwt_required()
 def delete_feedback(feedback_id):
-    current_user = get_jwt_identity()
-    feedback, error = feedback_services.delete_feedback(feedback_id, current_user)
+    current_user_email = get_jwt_identity()
+    feedback, error = feedback_services.delete_feedback(feedback_id, current_user_email)
     if error:
         return jsonify({"msg": error}), 403 if error == "Unauthorized" else 404
     return jsonify({"msg": "Feedback deleted"}), 200
