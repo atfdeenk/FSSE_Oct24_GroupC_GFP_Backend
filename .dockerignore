@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.log
+*.lock
+.env
+.env.*
+.venv/
+instance/test.db
+migrations/__pycache__/
+tests/
+config/local.py
+config/remote.py
+.envrc
