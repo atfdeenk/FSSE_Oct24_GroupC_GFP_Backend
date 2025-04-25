@@ -17,8 +17,8 @@ def get_feedback_by_user(user_id):
     return Feedbacks.query.filter_by(user_id=user_id).all()
 
 
-def get_all_feedback():
-    return Feedbacks.query.all()
+def get_all_feedback(page=1, per_page=10):
+    return Feedbacks.query.paginate(page=page, per_page=per_page, error_out=False).items
 
 
 def delete_feedback(feedback_id, user_id):

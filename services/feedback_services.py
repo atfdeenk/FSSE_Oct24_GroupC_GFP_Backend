@@ -1,5 +1,5 @@
 from repo import feedback_repo
-from models.user import Users
+from models.user import Users  # Needed for email to user lookup
 
 
 def create_feedback(data, current_user_email):
@@ -8,7 +8,8 @@ def create_feedback(data, current_user_email):
 
     user = Users.query.filter_by(email=current_user_email).first()
     if not user:
-        raise Exception("User not found")
+        return None
+
     data["user_id"] = user.id
     return feedback_repo.create_feedback(data)
 
@@ -21,12 +22,13 @@ def get_feedback_by_user(user_id):
     return feedback_repo.get_feedback_by_user(user_id)
 
 
-def get_all_feedback():
-    return feedback_repo.get_all_feedback()
+# ✅ Fix here: accept page and per_page
+def get_all_feedback(page=1, per_page=10):
+    return feedback_repo.get_all_feedback(page=page, per_page=per_page)
 
 
 def delete_feedback(feedback_id, current_user_email):
     user = Users.query.filter_by(email=current_user_email).first()
     if not user:
-        raise Exception("User not found")
+        return None, "User not found"
     return feedback_repo.delete_feedback(feedback_id, user.id)
