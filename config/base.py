@@ -1,0 +1,2 @@
+SECRET_KEY = "f14aYNslhECSco11MgWChlmhn5YHxXhD"
+JWT_SECRET_KEY = "ouWyAUOsc4NRTfPzgpMv"
