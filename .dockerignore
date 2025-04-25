@@ -12,6 +12,9 @@ __pycache__/
 instance/test.db
 migrations/__pycache__/
 tests/
+# Local configuration files
 config/local.py
 config/remote.py
-.envrc
+config/base.py
+config/remote.py.envrc
+uv.lock

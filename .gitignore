@@ -29,5 +29,7 @@ ENV/
 
 # Local configuration files
 config/local.py
+config/remote.py
+config/base.py
 config/remote.py.envrc
 uv.lock
