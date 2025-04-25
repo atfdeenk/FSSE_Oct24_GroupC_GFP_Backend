@@ -15,7 +15,7 @@ COPY . .
 
 # Set environment variables for Flask
 ENV FLASK_APP=app.py
-ENV FLASK_ENV=production
+ENV FLASK_ENV=remote
 
 # Verify gunicorn installation (optional, can be removed after verification)
 RUN which gunicorn && gunicorn --version
@@ -24,4 +24,5 @@ RUN which gunicorn && gunicorn --version
 EXPOSE 5000
 
 # Run production server (use PORT environment variable if available)
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 4 app:app"]
+CMD ["sh", "-c", "exec gunicorn --bind 0.0.0.0:${PORT} --workers 4 app:app"]
+
