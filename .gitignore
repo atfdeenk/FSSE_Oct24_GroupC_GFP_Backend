@@ -25,7 +25,8 @@ ENV/
 # Environment variables
 .env
 .env.*
+.envrc
 
 # Local configuration files
 config/local.py
-config/remote.py
+config/remote.py.envrc
