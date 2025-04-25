@@ -3,6 +3,9 @@ from config.settings import create_app
 from instance.database import db
 from flask_jwt_extended import create_access_token
 from models.user import Users
+from models.product import Products
+from models.product_category import ProductCategories
+from models.category import Categories
 
 @pytest.fixture(scope="function")
 def app():
@@ -86,3 +89,33 @@ def customer_token(app):
 def admin_token(app):
     with app.app_context():
         return create_access_token(identity=str(3), additional_claims={"role": "admin"})
+    
+    
+
+@pytest.fixture
+def seed_product(app):
+    with app.app_context():
+        product = Products(
+            id=1,
+            name="Test Coffee",
+            slug="test-coffee",
+            description="Test product description",
+            currency="IDR",
+            price=85000,
+            stock_quantity=10,
+            unit_quantity="250g",
+            image_url="http://example.com/test.jpg",
+            location="Test City",
+            featured=False,
+            flash_sale=False,
+            vendor_id=1
+        )
+        db.session.add(product)
+
+        # Assign the category (created in init_db)
+        pc = ProductCategories(product_id=1, category_id=1)
+        db.session.add(pc)
+
+        db.session.commit()
+        yield product
+

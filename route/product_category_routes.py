@@ -22,7 +22,7 @@ def add_category(product_id):
     }), 201
 
 @product_category_bp.route("/products/<int:product_id>/categories", methods=["GET"])
-@role_required("vendor")
+@role_required("customer", "vendor")
 def get_categories(product_id):
     relations = product_category_service.get_product_categories(product_id)
     return jsonify([

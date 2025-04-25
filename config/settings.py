@@ -1,4 +1,6 @@
 from flask import Flask
+
+# Import routes
 from route.index import index_router
 from route.auth_route import auth_bp
 from route.product_route import product_bp
