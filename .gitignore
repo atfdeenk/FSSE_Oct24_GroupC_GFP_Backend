@@ -33,3 +33,4 @@ config/remote.py
 config/base.py
 config/remote.py.envrc
 uv.lock
+postgres_db_data/
