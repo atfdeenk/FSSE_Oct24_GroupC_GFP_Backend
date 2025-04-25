@@ -23,7 +23,19 @@ class Categories(db.Model):
 
     # Relationships
     parent = db.relationship("Categories", remote_side=[id], backref="subcategories")
-    products = db.relationship("ProductCategories", backref="category", lazy=True)
+    products = db.relationship(
+        "ProductCategories",
+        lazy=True,
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        overlaps="products_linked,categories,product"
+    )
+
+
+
+
+
+
 
     def __repr__(self):
         return f"<Category {self.name}>"

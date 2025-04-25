@@ -4,7 +4,9 @@ from flask import Flask
 from route.index import index_router
 from route.auth_route import auth_bp
 from route.product_route import product_bp
-from route.categories_route import category_bp
+from route.product_category_routes import product_category_bp
+from route.product_image_route import product_image_bp
+from route.cart_route import cart_bp
 from flask_jwt_extended import JWTManager  # Import the JWTManager
 
 import models  # noqa: F401
@@ -27,6 +29,8 @@ def create_app(config_module="config.testing"):
     app.register_blueprint(index_router)
     app.register_blueprint(auth_bp)
     app.register_blueprint(product_bp)
-    app.register_blueprint(category_bp)
+    app.register_blueprint(product_category_bp)
+    app.register_blueprint(product_image_bp)
+    app.register_blueprint(cart_bp)
 
     return app
