@@ -24,5 +24,5 @@ RUN which gunicorn && gunicorn --version
 EXPOSE 5000
 
 # Run production server (use PORT environment variable if available)
-CMD ["sh", "-c", "exec gunicorn --bind 0.0.0.0:${PORT} --workers 4 app:app"]
+CMD exec gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 4 app:app
 
