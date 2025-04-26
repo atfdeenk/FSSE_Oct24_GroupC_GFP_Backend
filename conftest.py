@@ -37,13 +37,12 @@ def init_db(app):
 
         # ✅ Seed test vendor user
         vendor = Users(
-            id=1,
             username="vendoruser",
             first_name="Test",
             last_name="Vendor",
             email="vendor@mail.com",
             phone="081234567890",
-            password_hash="test",  # acceptable for test
+            password_hash="test",
             date_of_birth="1990-01-01",
             address="Test Street 123",
             city="Jakarta",
@@ -56,10 +55,7 @@ def init_db(app):
             bank_name="BNI",
             is_active=True,
         )
-        db.session.add(vendor)
-
         customer = Users(
-            id=2,
             username="customeruser",
             first_name="Test",
             last_name="Customer",
@@ -78,10 +74,7 @@ def init_db(app):
             bank_name="BCA",
             is_active=True,
         )
-        db.session.add(customer)
-
         admin = Users(
-            id=3,
             username="adminuser",
             first_name="Admin",
             last_name="User",
@@ -100,20 +93,25 @@ def init_db(app):
             bank_name="BNI",
             is_active=True,
         )
-        db.session.add(admin)
 
-        # ✅ Seed category with ID 1
-        from models.category import Categories
+        db.session.add_all([vendor, customer, admin])
+        db.session.commit()
+
+        # Make user IDs available for other fixtures
+        app.test_vendor_id = vendor.id
+        app.test_customer_id = customer.id
+        app.test_admin_id = admin.id
 
         category = Categories(
-            id=1,
             name="Test Category",
             slug="test-category",
-            vendor_id=1,  # Required field to pass NOT NULL constraint
+            vendor_id=vendor.id,
         )
         db.session.add(category)
-
         db.session.commit()
+
+        app.test_category_id = category.id
+
         yield
         db.drop_all()
 
