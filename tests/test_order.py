@@ -65,7 +65,7 @@ def test_get_order_success(mock_get_jwt_identity, client, customer_token, seed_p
             {
                 "product_id": seed_product.id,
                 "quantity": 1,
-                "unit_price": seed_product.price,  # <- tambahin ini
+                "unit_price": float(seed_product.price),
             }
         ]
     }

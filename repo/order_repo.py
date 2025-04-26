@@ -12,7 +12,7 @@ def create_order(order_data):
 
 
 def get_order_by_id(order_id):
-    return Orders.query.get(order_id)
+    return db.session.get(Orders, order_id)
 
 
 def get_orders_by_user(user_id):
