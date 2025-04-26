@@ -11,12 +11,31 @@ order_bp = Blueprint("order_bp", __name__)
 def create_order():
     data = request.get_json()
     items = data.get("items", [])
+    vendor_id = data.get("vendor_id")
     current_user = get_jwt_identity()
 
     if not items:
         return jsonify({"msg": "No items to order"}), 400
 
-    order, error = order_services.create_order_with_items(current_user, items)
+    if not vendor_id:
+        return jsonify({"msg": "Vendor ID is required"}), 400
+
+    # Validate each item has required keys
+    required_keys = {"product_id", "quantity", "unit_price"}
+    for idx, item in enumerate(items):
+        if not all(key in item for key in required_keys):
+            return (
+                jsonify(
+                    {
+                        "msg": f"Item at index {idx} is missing required keys: {required_keys}"
+                    }
+                ),
+                400,
+            )
+
+    order, error = order_services.create_order_with_items(
+        current_user, items, vendor_id
+    )
     if error:
         return jsonify({"msg": error}), 400
 

@@ -1,3 +1,4 @@
+from models.product import Products
 from repo import order_repo
 from sqlalchemy.exc import IntegrityError
 from instance.database import db
@@ -6,23 +7,31 @@ from instance.database import db
 def create_order_with_items(user_id, items):
     """Create an order and its items."""
     total_amount = sum(item["quantity"] * item["unit_price"] for item in items)
+
+    # Create the order first
     order_data = {"user_id": user_id, "total_amount": total_amount, "status": "pending"}
     try:
         order = order_repo.create_order(order_data)
 
+        # For each item, get the vendor_id from the product
         for item in items:
+            product = Products.query.get(item["product_id"])  # Fetch the product
+            if not product:
+                return None, f"Product with id {item['product_id']} not found."
+
             item_data = {
                 "order_id": order.id,
                 "product_id": item["product_id"],
                 "quantity": item["quantity"],
                 "unit_price": item["unit_price"],
+                "vendor_id": product.vendor_id,  # Get vendor_id from product
             }
             order_repo.create_order_item(item_data)
 
         db.session.commit()
-
         return order, None
     except IntegrityError as e:
+        db.session.rollback()  # Rollback if error occurs
         return None, str(e)
 
 
