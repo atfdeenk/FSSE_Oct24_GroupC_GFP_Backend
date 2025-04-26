@@ -10,6 +10,7 @@ from instance.database import db
 
 from models.user import RoleType
 
+
 def create_user(data):
     try:
         # ✅ Hash the password
@@ -23,12 +24,12 @@ def create_user(data):
         except KeyError:
             raise ValueError("Missing required field: role")
 
-
         user = user_repo.create_user(data)
         return user
     except IntegrityError as e:
         print("IntegrityError:", e)  # Debug output
         return None
+
 
 def authenticate(email, password):
     user = user_repo.get_user_by_email(email)
@@ -36,8 +37,10 @@ def authenticate(email, password):
         return user
     return None
 
+
 def get_user_by_id(user_id):
     return user_repo.get_user_by_id(user_id)
+
 
 def update_user(user_id, data, current_user_id, current_user_role):
     user = user_repo.get_user_by_id(user_id)
@@ -84,20 +87,30 @@ def delete_user(target_user_id, current_user_id, current_user_role):
 
 def get_me_service():
     # Get the current user's ID from the JWT token
-    current_user = get_jwt_identity()  # This will return a dictionary with user info (id, role, etc.)
+    current_user = (
+        get_jwt_identity()
+    )  # This will return a dictionary with user info (id, role, etc.)
 
     # Fetch the user data from the repository (or database)
     user = get_user_by_id(current_user["id"])
 
     if not user:
-        return jsonify({"message": "User not found"}), 404  # Return the response in JSON format
+        return (
+            jsonify({"message": "User not found"}),
+            404,
+        )  # Return the response in JSON format
 
     # Return the user's information (you can return just a subset of the fields)
-    return jsonify({
-        "id": user.id,
-        "username": user.username,
-        "first_name": user.first_name,
-        "last_name": user.last_name,
-        "email": user.email,
-        "role": user.role  # Assuming 'role' is a string or enum
-    }), 200  # Ensure it always returns a tuple with status code
+    return (
+        jsonify(
+            {
+                "id": user.id,
+                "username": user.username,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "email": user.email,
+                "role": user.role,  # Assuming 'role' is a string or enum
+            }
+        ),
+        200,
+    )  # Ensure it always returns a tuple with status code

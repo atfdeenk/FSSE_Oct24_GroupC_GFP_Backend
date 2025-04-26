@@ -22,11 +22,15 @@ class Products(db.Model):
     unit_quantity: str = db.Column(db.String(50), nullable=False)
 
     image_url: str = db.Column(db.String(255), nullable=True)
-    location: str = db.Column(db.String(120), nullable=True)
     featured: bool = db.Column(db.Boolean, default=False)
     flash_sale: bool = db.Column(db.Boolean, default=False)
 
     vendor_id: int = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    vendor = db.relationship("Users", back_populates="products", overlaps="vendor,products")
+
+    @property
+    def location(self):
+        return self.vendor.city
 
     created_at: datetime = db.Column(db.DateTime, default=crono.now)
     updated_at: datetime = db.Column(db.DateTime, default=crono.now, onupdate=crono.now)

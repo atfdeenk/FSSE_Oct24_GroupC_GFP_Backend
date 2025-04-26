@@ -68,3 +68,36 @@ uv run flask db upgrade
 ```
 
 ---
+
+### Step 2: Deploy to Koyeb
+
+To deploy the Flask application to Koyeb, follow these steps:
+
+1. Ensure you have connected your Supabase database and set the necessary environment variables in Koyeb.
+
+2. Add a `Procfile` to your project root with the following content to specify the run command for Koyeb:
+
+```
+web: gunicorn --bind 0.0.0.0:$PORT --workers 4 app:app
+```
+
+3. Build and push your Docker image to a container registry (e.g., Docker Hub):
+
+```bash
+docker build -t your-dockerhub-username/your-app-name:latest .
+docker push your-dockerhub-username/your-app-name:latest
+```
+
+4. Create or update your Koyeb service to use the pushed Docker image.
+
+5. Set the environment variables in your Koyeb service settings, including:
+
+- `DATABASE_URL` or individual DB connection variables
+- `JWT_SECRET_KEY`
+- Supabase-related environment variables
+
+6. Deploy the service and monitor the logs to ensure the app starts successfully.
+
+For more details, refer to the [Koyeb documentation](https://koyeb.com/docs).
+
+---
