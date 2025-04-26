@@ -9,12 +9,7 @@ def create_feedback(data, current_user_email):
     if not data:
         return None  # let route handle 400 error
 
-    try:
-        user_id = int(current_user_email)
-    except ValueError:
-        return None
-
-    user = Users.query.filter_by(id=user_id).first()
+    user = Users.query.filter_by(email=current_user_email).first()
     if not user:
         return None
 
@@ -44,8 +39,8 @@ def get_all_feedback(page=1, per_page=10):
     return feedback_repo.get_all_feedback(page=page, per_page=per_page)
 
 
-def delete_feedback(feedback_id, current_user_id, current_user_role):
-    user = Users.query.filter_by(id=current_user_id).first()
+def delete_feedback(feedback_id, current_user_email, current_user_role):
+    user = Users.query.filter_by(email=current_user_email).first()
     if not user:
         return None, "User not found"
 
