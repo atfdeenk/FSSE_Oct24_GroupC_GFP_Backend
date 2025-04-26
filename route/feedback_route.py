@@ -9,13 +9,14 @@ feedback_bp = Blueprint("feedback_bp", __name__)
 @feedback_bp.route("/feedback", methods=["POST"])
 @jwt_required()
 def create_feedback():
-    current_user_email = get_jwt_identity()
+    current_user_id = get_jwt_identity()
     data = request.get_json()
     if not data:
         return jsonify({"msg": "Invalid request"}), 400
 
-    feedback, error = feedback_services.create_feedback(data, current_user_email)
+    feedback, error = feedback_services.create_feedback(data, current_user_id)
     if error:
+        print(f"Create feedback error: {error}, data: {data}")
         return jsonify({"msg": error}), 400
     if feedback is None:
         return jsonify({"msg": "Failed to create feedback"}), 400

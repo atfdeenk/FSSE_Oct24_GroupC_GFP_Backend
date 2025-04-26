@@ -39,7 +39,7 @@ def create_test_user(app):
         return {"id": user.id, "email": user.email}
 
 
-def create_test_product(app):
+def create_test_product(app, vendor_id=1):
     """Create and return a test product."""
     with app.app_context():
         product = Product(
@@ -51,7 +51,7 @@ def create_test_product(app):
             unit_quantity="pcs",
             image_url="http://example.com/product.jpg",
             location="Test Location",
-            vendor_id=1,
+            vendor_id=vendor_id,
         )
         db.session.add(product)
         db.session.commit()

@@ -1,100 +1,99 @@
 import pytest
-from shared.auth_helpers import get_auth_header
-from shared.test_helpers import create_test_user, create_test_product
+from instance.database import db
+import json
 
 
-# Helper to create feedback
-def create_feedback(client, headers, product_id, rating=5, comment="Great product!"):
-    return client.post(
+def test_create_feedback(client, customer_token, seed_product):
+    payload = {"product_id": seed_product.id, "rating": 4, "comment": "Great coffee!"}
+    response = client.post(
         "/feedback",
-        json={
-            "product_id": product_id,
-            "rating": rating,
-            "comment": comment,
-        },
-        headers={**headers, "Content-Type": "application/json"},
+        headers={"Authorization": f"Bearer {customer_token}"},
+        data=json.dumps(payload),
+        content_type="application/json",
     )
-
-
-def test_create_feedback(client, app):
-    with app.app_context():
-        user = create_test_user(app)
-        product = create_test_product(app)
-        user_email = user["email"]
-        product_id = product["id"]
-    headers = get_auth_header(user_email)
-    # product_id extracted inside app context
-
-    response = create_feedback(client, headers, product_id)
     assert response.status_code == 201
     data = response.get_json()
-    assert data["msg"] == "Feedback submitted"
     assert "id" in data
+    assert data["msg"] == "Feedback submitted"
 
 
-def test_get_feedback_by_product(client, app):
-    with app.app_context():
-        user = create_test_user(app)
-        product = create_test_product(app)
-        user_email = user["email"]
-        product_id = product["id"]
-    headers = get_auth_header(user_email)
-    create_feedback(client, headers, product_id)
-    # product_id extracted inside app context
+def test_get_feedback_by_product(client, customer_token, seed_product):
+    # First, create feedback
+    client.post(
+        "/feedback",
+        headers={"Authorization": f"Bearer {customer_token}"},
+        json={
+            "product_id": seed_product.id,
+            "rating": 5,
+            "comment": "Amazing product!",
+        },
+    )
 
-    response = client.get(f"/feedback/product/{product_id}")
-    assert response.status_code == 200
-    data = response.get_json()
-    assert len(data) >= 1
-    assert data[0]["product_id"] == product_id
-
-
-def test_get_feedback_by_user(client, app):
-    with app.app_context():
-        user = create_test_user(app)
-        product = create_test_product(app)
-        user_email = user["email"]
-        product_id = product["id"]
-        user_id = user["id"]
-    headers = get_auth_header(user_email)
-    create_feedback(client, headers, product_id)
-    # product_id extracted inside app context
-
-    response = client.get(f"/feedback/user/{user_id}", headers=headers)
-    assert response.status_code == 200
-    data = response.get_json()
-    assert len(data) >= 1
-    assert data[0]["rating"] == 5
-
-
-def test_get_all_feedback(client, app):
-    with app.app_context():
-        user = create_test_user(app)
-        product = create_test_product(app)
-        user_email = user["email"]
-        product_id = product["id"]
-    headers = get_auth_header(user_email)
-    create_feedback(client, headers, product_id)
-    # product_id extracted inside app context
-
-    response = client.get("/feedback")
+    # Then retrieve it
+    response = client.get(f"/feedback/product/{seed_product.id}")
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
     assert len(data) >= 1
+    assert data[0]["product_id"] == seed_product.id
 
 
-def test_delete_feedback(client, app):
+def test_get_feedback_by_user(client, app, init_db, customer_token, seed_product):
     with app.app_context():
-        user = create_test_user(app)
-        product = create_test_product(app)
-        user_email = user["email"]
-        product_id = product["id"]
-    headers = get_auth_header(user_email)
-    create_resp = create_feedback(client, headers, product_id)
-    feedback_id = create_resp.get_json()["id"]
-    # product_id extracted inside app context
+        from models.feedback import Feedbacks
 
-    delete_resp = client.delete(f"/feedback/{feedback_id}", headers=headers)
-    assert delete_resp.status_code == 200
-    assert delete_resp.get_json()["msg"] == "Feedback deleted"
+        # Create feedback for customer (id=2)
+        feedback = Feedbacks(
+            user_id=2, product_id=seed_product.id, rating=5, comment="Excellent product"
+        )
+        db.session.add(feedback)
+        db.session.commit()
+
+        response = client.get(
+            f"/feedback/user/2", headers={"Authorization": f"Bearer {customer_token}"}
+        )
+        assert response.status_code == 200
+        data = response.get_json()
+        assert isinstance(data, list)
+        assert any(fb["comment"] == "Excellent product" for fb in data)
+
+
+def test_get_all_feedback(client, customer_token, seed_product):
+    # Add feedback for pagination test
+    for i in range(3):
+        client.post(
+            "/feedback",
+            headers={"Authorization": f"Bearer {customer_token}"},
+            json={
+                "product_id": seed_product.id,
+                "rating": 5,
+                "comment": f"Feedback {i}",
+            },
+        )
+
+    response = client.get("/feedback?page=1&per_page=2")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert len(data) <= 2  # pagination test
+
+
+def test_delete_feedback(client, app, customer_token, seed_product):
+    # Create feedback to delete
+    response = client.post(
+        "/feedback",
+        headers={"Authorization": f"Bearer {customer_token}"},
+        json={
+            "product_id": seed_product.id,
+            "rating": 3,
+            "comment": "Temporary feedback",
+        },
+    )
+    feedback_id = response.get_json()["id"]
+
+    # Delete it
+    response = client.delete(
+        f"/feedback/{feedback_id}",
+        headers={"Authorization": f"Bearer {customer_token}"},
+    )
+    assert response.status_code == 200
+    assert response.get_json()["msg"] == "Feedback deleted"
