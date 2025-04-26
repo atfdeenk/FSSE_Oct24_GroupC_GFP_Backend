@@ -74,8 +74,10 @@ def create_product_with_serialization(data: dict):
         print(f"[PRICE ERROR] {e}")
         abort(400, "Invalid price format")
 
-    # TEMP DEBUG: fill optional nullable fields if not present
-    data.setdefault("location", "Test City")
+    # 🛑 REMOVE location if someone sends it by mistake
+    data.pop("location", None)
+
+    # ✅ Fill only real optional fields
     data.setdefault("image_url", "http://example.com/image.jpg")
     data.setdefault("featured", False)
     data.setdefault("flash_sale", False)
@@ -92,6 +94,7 @@ def create_product_with_serialization(data: dict):
         print("[CRITICAL ERROR DURING PRODUCT CREATION]")
         print(e)
         abort(500, f"Server Error: {str(e)}")
+
 
 
 

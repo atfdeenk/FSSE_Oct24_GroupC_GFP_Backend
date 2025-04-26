@@ -38,7 +38,7 @@ class Users(db.Model):
     updated_at: datetime = db.Column(db.DateTime, default=crono.now, onupdate=crono.now)
 
     # Relationships
-    products = db.relationship("Products", backref="vendor", lazy=True)
+    products = db.relationship("Products", back_populates="vendor", lazy=True)
     categories = db.relationship("Categories", backref="owner", lazy=True)
     cart = db.relationship("Cart", uselist=False, backref="user")
     orders = db.relationship("Orders", back_populates="user", lazy=True)
