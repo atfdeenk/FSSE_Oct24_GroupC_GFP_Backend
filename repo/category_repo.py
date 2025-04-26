@@ -16,7 +16,7 @@ def get_all_categories():
 
 
 def get_category_by_id(category_id):
-    return Categories.query.get(category_id)
+    return db.session.get(Categories, category_id)
 
 
 def update_category(category, data):
