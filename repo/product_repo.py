@@ -3,9 +3,10 @@ from models.product import Products
 from models.product_category import ProductCategories
 from models.category import Categories
 from models.cart_item import CartItems
+from models.user import Users
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
-from sqlalchemy import asc, desc, cast, Numeric
+from sqlalchemy import asc, desc, cast, Numeric, or_
 
 def get_all_products():
     return Products.query.all()
@@ -39,7 +40,8 @@ def create_product(data):
 
 
 def update_product(product_id, data):
-    product = Products.query.get(product_id)
+    # Replace deprecated Query.get() with Session.get()
+    product = db.session.get(Products, product_id)
     if not product:
         return None
     for key, value in data.items():
@@ -62,17 +64,26 @@ def delete_product(product_id):
     return product
 
 
+from sqlalchemy.orm import aliased
+
 def get_all_products_filtered(search=None, category_id=None, page=1, limit=10, sort_by="created_at", sort_order="desc"):
     query = Products.query
 
     if search:
-        query = query.filter(Products.name.ilike(f"%{search}%"))
+        # ✅ Join Users table first
+        query = query.join(Users, Products.vendor_id == Users.id)
+
+        query = query.filter(
+            or_(
+                Products.name.ilike(f"%{search}%"),
+                Users.city.ilike(f"%{search}%"),  # ✅ search on Users.city not Products.location
+            )
+        )
 
     if category_id:
         query = query.join(ProductCategories).filter(ProductCategories.category_id == category_id)
 
     # Sorting logic
-    # 👇 Sorting logic
     if sort_by == "price":
         sort_column = cast(Products.price, Numeric)
     elif sort_by == "name":
@@ -84,7 +95,6 @@ def get_all_products_filtered(search=None, category_id=None, page=1, limit=10, s
 
     order_func = asc if sort_order.lower() == "asc" else desc
     query = query.order_by(order_func(sort_column))
-
 
     total = query.count()
     products = query.offset((page - 1) * limit).limit(limit).all()

@@ -66,7 +66,9 @@ from flask import current_app
 def create_product_with_serialization(data: dict):
     claims = get_jwt()
     vendor_id = claims.get("sub")
+    vendor_city = claims.get("city", "Unknown")
     data["vendor_id"] = vendor_id
+    data["location"] = vendor_city
 
     try:
         data["price"] = Decimal(data["price"])
@@ -74,8 +76,10 @@ def create_product_with_serialization(data: dict):
         print(f"[PRICE ERROR] {e}")
         abort(400, "Invalid price format")
 
-    # TEMP DEBUG: fill optional nullable fields if not present
-    data.setdefault("location", "Test City")
+    # 🛑 REMOVE location if someone sends it by mistake
+    data.pop("location", None)
+
+    # ✅ Fill only real optional fields
     data.setdefault("image_url", "http://example.com/image.jpg")
     data.setdefault("featured", False)
     data.setdefault("flash_sale", False)
@@ -92,6 +96,7 @@ def create_product_with_serialization(data: dict):
         print("[CRITICAL ERROR DURING PRODUCT CREATION]")
         print(e)
         abort(500, f"Server Error: {str(e)}")
+
 
 
 
