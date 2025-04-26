@@ -16,7 +16,7 @@ class OrderItems(db.Model):
     vendor_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
     order = db.relationship("Orders", back_populates="order_items")
-    product = db.relationship("Products", back_populates="order_items")
+    product = db.relationship("Products", back_populates="order_items", lazy=True)
 
     def __repr__(self):
         return f"<OrderItem Order ID {self.order_id} Product ID {self.product_id}>"
