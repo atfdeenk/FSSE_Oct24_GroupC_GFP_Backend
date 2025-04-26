@@ -33,9 +33,7 @@ def create_order():
                 400,
             )
 
-    order, error = order_services.create_order_with_items(
-        current_user, items, vendor_id
-    )
+    order, error = order_services.create_order_with_items(current_user, items)
     if error:
         return jsonify({"msg": error}), 400
 
