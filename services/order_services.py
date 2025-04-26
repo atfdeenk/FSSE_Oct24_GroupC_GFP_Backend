@@ -19,6 +19,8 @@ def create_order_with_items(user_id, items):
             }
             order_repo.create_order_item(item_data)
 
+        db.session.commit()
+
         return order, None
     except IntegrityError as e:
         return None, str(e)
