@@ -7,7 +7,7 @@ from instance.database import db
 def create_order(order_data):
     order = Orders(**order_data)
     db.session.add(order)
-    db.session.commit()
+    db.session.flush()
     return order
 
 
@@ -25,6 +25,8 @@ def update_order(order):
 
 
 def delete_order(order):
+    for item in order.order_items:
+        db.session.delete(item)
     db.session.delete(order)
     db.session.commit()
 
@@ -33,7 +35,6 @@ def delete_order(order):
 def create_order_item(item_data):
     item = OrderItems(**item_data)
     db.session.add(item)
-    db.session.commit()
     return item
 
 
