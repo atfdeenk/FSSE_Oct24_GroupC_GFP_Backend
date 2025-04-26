@@ -27,7 +27,7 @@ def test_create_product_authorized(client, vendor_token):
         "discount_percentage": 0,
         "stock_quantity": 10,
         "unit_quantity": "pcs",
-        "location": "Jakarta",
+        #"location": "Jakarta",
         "image_url": "http://example.com/image.jpg",
         "featured": False,
         "flash_sale": False
@@ -53,7 +53,7 @@ def test_create_product_unauthorized_role(client, customer_token):
         "discount_percentage": 0,
         "stock_quantity": 5,
         "unit_quantity": "pcs",
-        "location": "Bandung",
+        #"location": "Bandung",
         "image_url": "http://example.com/image2.jpg",
         "featured": False,
         "flash_sale": False
@@ -77,7 +77,7 @@ def test_delete_product_as_admin(client, admin_token):
         stock_quantity=1,
         unit_quantity="pcs",
         vendor_id=1,
-        location="Test City",
+        #location="Test City",
         image_url="http://example.com/image.jpg",
         featured=False,
         flash_sale=False
@@ -108,7 +108,7 @@ def test_update_product(client, vendor_token):
         "discount_percentage": 0,
         "stock_quantity": 15,
         "unit_quantity": "pcs",
-        "location": "Medan",
+        #"location": "Medan",
         "image_url": "http://example.com/update.jpg",
         "featured": False,
         "flash_sale": False

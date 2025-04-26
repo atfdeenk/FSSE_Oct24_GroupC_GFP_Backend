@@ -3,6 +3,7 @@ from instance.database import db
 from models.product import Products
 from models.cart_item import CartItems
 
+
 @pytest.fixture
 def seed_product(app):
     with app.app_context():
@@ -15,14 +16,14 @@ def seed_product(app):
             price=15000.00,
             stock_quantity=20,
             unit_quantity="1 pc",
-            vendor_id=1
+            vendor_id=1,
         )
         db.session.add(product)
 
         # ✅ Add a customer user with id=2
         from models.user import Users
+
         customer = Users(
-            id=2,
             username="testcustomer",
             first_name="Cart",
             last_name="User",
@@ -39,7 +40,7 @@ def seed_product(app):
             role="customer",
             bank_account="1112223334",
             bank_name="Mandiri",
-            is_active=True
+            is_active=True,
         )
         db.session.add(customer)
 
@@ -49,45 +50,48 @@ def seed_product(app):
         db.session.query(Users).filter(Users.id == 2).delete()
         db.session.commit()
 
+
 def test_create_and_get_cart(client, customer_token):
     response = client.get(
-        "/cart",
-        headers={"Authorization": f"Bearer {customer_token}"}
+        "/cart", headers={"Authorization": f"Bearer {customer_token}"}
     )
     assert response.status_code == 200
     data = response.get_json()
     assert "cart_id" in data and "user_id" in data
 
+
 def test_add_item_to_cart(client, customer_token, seed_product):
     response = client.post(
         "/cart/items",
         json={"product_id": 1, "quantity": 2},
-        headers={"Authorization": f"Bearer {customer_token}"}
+        headers={"Authorization": f"Bearer {customer_token}"},
     )
     assert response.status_code == 201
     data = response.get_json()
     assert data["product_id"] == 1
     assert data["quantity"] == 2
 
+
 def test_get_cart_items(client, customer_token, seed_product):
     client.post(
         "/cart/items",
         json={"product_id": 1, "quantity": 3},
-        headers={"Authorization": f"Bearer {customer_token}"}
+        headers={"Authorization": f"Bearer {customer_token}"},
     )
 
     response = client.get(
-        "/cart/items",
-        headers={"Authorization": f"Bearer {customer_token}"}
+        "/cart/items", headers={"Authorization": f"Bearer {customer_token}"}
     )
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
     assert data[0]["product_id"] == 1
 
+
 def test_update_cart_item_quantity(client, app, customer_token, seed_product):
     with app.app_context():
         from models.cart import Cart
+
         cart = Cart(user_id=2)
         db.session.add(cart)
         db.session.commit()
@@ -99,15 +103,17 @@ def test_update_cart_item_quantity(client, app, customer_token, seed_product):
         response = client.patch(
             f"/cart/items/{item.id}",
             json={"quantity": 5},
-            headers={"Authorization": f"Bearer {customer_token}"}
+            headers={"Authorization": f"Bearer {customer_token}"},
         )
         assert response.status_code == 200
         data = response.get_json()
         assert data["quantity"] == 5
 
+
 def test_remove_cart_item(client, app, customer_token, seed_product):
     with app.app_context():
         from models.cart import Cart
+
         cart = Cart(user_id=2)
         db.session.add(cart)
         db.session.commit()
@@ -118,7 +124,7 @@ def test_remove_cart_item(client, app, customer_token, seed_product):
 
         response = client.delete(
             f"/cart/items/{item.id}",
-            headers={"Authorization": f"Bearer {customer_token}"}
+            headers={"Authorization": f"Bearer {customer_token}"},
         )
         assert response.status_code == 200
         assert response.get_json()["message"] == "Item removed"

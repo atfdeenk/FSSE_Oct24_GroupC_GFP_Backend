@@ -40,7 +40,7 @@ def login():
     user = user_services.get_user_by_id(user.id)
 
     token = create_access_token(
-        identity=str(user.id), additional_claims={"role": user.role.value}
+        identity=str(user.id), additional_claims={"role": user.role.value, "city": user.city or "Unknown"}
     )
 
     return jsonify(access_token=token), 200
