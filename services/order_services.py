@@ -15,7 +15,7 @@ def create_order_with_items(user_id, items):
 
         # For each item, get the vendor_id from the product
         for item in items:
-            product = Products.query.get(item["product_id"])  # Fetch the product
+            product = db.session.get(Products, item["product_id"])  # Fetch the product
             if not product:
                 return None, f"Product with id {item['product_id']} not found."
 

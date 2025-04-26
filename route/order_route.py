@@ -33,7 +33,9 @@ def create_order():
                 400,
             )
 
-    order, error = order_services.create_order_with_items(current_user, items)
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user
+
+    order, error = order_services.create_order_with_items(user_id, items)
     if error:
         return jsonify({"msg": error}), 400
 
@@ -77,7 +79,8 @@ def get_order(order_id):
 @jwt_required()
 def get_user_orders():
     current_user = get_jwt_identity()
-    orders = order_services.get_user_orders(current_user)
+    user_id = current_user.get("id") if isinstance(current_user, dict) else current_user
+    orders = order_services.get_user_orders(user_id)
 
     return (
         jsonify(
