@@ -30,12 +30,3 @@ def delete_feedback(feedback_id, user_id):
     db.session.delete(feedback)
     db.session.commit()
     return feedback, None
-
-
-def get_feedback_by_id(feedback_id):
-    return Feedbacks.query.get(feedback_id)
-
-
-def delete_feedback_by_instance(feedback):
-    db.session.delete(feedback)
-    db.session.commit()

@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from services import feedback_services
 from models.user import Users
 
@@ -15,15 +15,6 @@ def create_feedback():
         return jsonify({"msg": "Invalid request"}), 400
 
     feedback = feedback_services.create_feedback(data, current_user_email)
-    if not feedback:
-        return (
-            jsonify(
-                {
-                    "msg": "Failed to create feedback. Missing required fields or invalid user."
-                }
-            ),
-            400,
-        )
     return jsonify({"msg": "Feedback submitted", "id": feedback.id}), 201
 
 
@@ -53,10 +44,8 @@ def get_feedback_by_product(product_id):
 def get_feedback_by_user(user_id):
     current_user_email = get_jwt_identity()
     user = Users.query.filter_by(email=current_user_email).first()
-    if not user:
-        return jsonify({"msg": "User not found"}), 404
 
-    if user.id != user_id:
+    if not user or user.id != user_id:
         return jsonify({"msg": "Unauthorized"}), 403
 
     feedback_list = feedback_services.get_feedback_by_user(user_id)
@@ -105,14 +94,7 @@ def get_all_feedback():
 @jwt_required()
 def delete_feedback(feedback_id):
     current_user_email = get_jwt_identity()
-    user = Users.query.filter_by(email=current_user_email).first()
-    if not user:
-        return jsonify({"msg": "User not found"}), 404
-
-    current_user_role = get_jwt().get("role")
-    feedback, error = feedback_services.delete_feedback(
-        feedback_id, current_user_email, current_user_role
-    )
+    feedback, error = feedback_services.delete_feedback(feedback_id, current_user_email)
     if error:
         return jsonify({"msg": error}), 403 if error == "Unauthorized" else 404
     return jsonify({"msg": "Feedback deleted"}), 200
