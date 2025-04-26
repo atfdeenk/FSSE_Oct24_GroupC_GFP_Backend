@@ -44,7 +44,7 @@ def get_order(order_id):
                         {
                             "product_id": item.product_id,
                             "quantity": item.quantity,
-                            "unit_price": str(item.unit_price),
+                            "unit_price": float(item.unit_price),
                         }
                         for item in items
                     ],
