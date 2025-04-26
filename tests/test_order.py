@@ -12,7 +12,9 @@ def test_create_order_success(
     mock_get_jwt_identity, client, customer_token, seed_product
 ):
     headers = {"Authorization": f"Bearer {customer_token}"}
-    data = {"items": [{"product_id": seed_product.id, "quantity": 2}]}
+    data = {
+        "items": [{"product_id": seed_product.id, "quantity": 2, "unit_price": 85000}]
+    }
     response = client.post(
         "/orders",
         data=json.dumps(data),
@@ -58,7 +60,15 @@ def patch_jwt_identity(user_id):
 def test_get_order_success(mock_get_jwt_identity, client, customer_token, seed_product):
     # First create an order
     headers = {"Authorization": f"Bearer {customer_token}"}
-    data = {"items": [{"product_id": seed_product.id, "quantity": 1}]}
+    data = {
+        "items": [
+            {
+                "product_id": seed_product.id,
+                "quantity": 1,
+                "unit_price": seed_product.price,  # <- tambahin ini
+            }
+        ]
+    }
     create_resp = client.post(
         "/orders",
         data=json.dumps(data),
@@ -128,7 +138,9 @@ def test_update_order_status_success(
 ):
     headers = {"Authorization": f"Bearer {customer_token}"}
     # Create order first
-    data = {"items": [{"product_id": seed_product.id, "quantity": 1}]}
+    data = {
+        "items": [{"product_id": seed_product.id, "quantity": 1, "unit_price": 85000}]
+    }
     create_resp = client.post(
         "/orders",
         data=json.dumps(data),
@@ -198,7 +210,9 @@ def test_delete_order_success(
 ):
     headers = {"Authorization": f"Bearer {customer_token}"}
     # Create order first
-    data = {"items": [{"product_id": seed_product.id, "quantity": 1}]}
+    data = {
+        "items": [{"product_id": seed_product.id, "quantity": 1, "unit_price": 85000}]
+    }
     create_resp = client.post(
         "/orders",
         data=json.dumps(data),

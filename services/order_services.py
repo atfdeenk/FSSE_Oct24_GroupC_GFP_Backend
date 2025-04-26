@@ -1,5 +1,6 @@
 from repo import order_repo
 from sqlalchemy.exc import IntegrityError
+from instance.database import db
 
 
 def create_order_with_items(user_id, items):
@@ -50,5 +51,12 @@ def delete_order(order_id):
     if not order:
         return None, "Order not found"
 
-    order_repo.delete_order(order)
+    # Delete order items
+    for item in order.order_items:
+        db.session.delete(item)
+
+    # Delete order
+    db.session.delete(order)
+    db.session.commit()
+
     return order, None
