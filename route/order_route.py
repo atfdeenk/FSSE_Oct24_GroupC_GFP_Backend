@@ -16,7 +16,7 @@ def create_order():
     if not items:
         return jsonify({"msg": "No items to order"}), 400
 
-    order, error = order_services.create_order_with_items(current_user["id"], items)
+    order, error = order_services.create_order_with_items(current_user, items)
     if error:
         return jsonify({"msg": error}), 400
 
@@ -60,7 +60,7 @@ def get_order(order_id):
 @jwt_required()
 def get_user_orders():
     current_user = get_jwt_identity()
-    orders = order_services.get_user_orders(current_user["id"])
+    orders = order_services.get_user_orders(current_user)
 
     return (
         jsonify(
