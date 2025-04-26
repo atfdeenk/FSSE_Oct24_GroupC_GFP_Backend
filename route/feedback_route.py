@@ -14,7 +14,11 @@ def create_feedback():
     if not data:
         return jsonify({"msg": "Invalid request"}), 400
 
-    feedback = feedback_services.create_feedback(data, current_user_email)
+    feedback, error = feedback_services.create_feedback(data, current_user_email)
+    if error:
+        return jsonify({"msg": error}), 400
+    if feedback is None:
+        return jsonify({"msg": "Failed to create feedback"}), 400
     return jsonify({"msg": "Feedback submitted", "id": feedback.id}), 201
 
 
@@ -42,8 +46,8 @@ def get_feedback_by_product(product_id):
 @feedback_bp.route("/feedback/user/<int:user_id>", methods=["GET"])
 @jwt_required()
 def get_feedback_by_user(user_id):
-    current_user_email = get_jwt_identity()
-    user = Users.query.filter_by(email=current_user_email).first()
+    current_user_id = get_jwt_identity()
+    user = Users.query.filter_by(id=current_user_id).first()
 
     if not user or user.id != user_id:
         return jsonify({"msg": "Unauthorized"}), 403
@@ -93,8 +97,8 @@ def get_all_feedback():
 @feedback_bp.route("/feedback/<int:feedback_id>", methods=["DELETE"])
 @jwt_required()
 def delete_feedback(feedback_id):
-    current_user_email = get_jwt_identity()
-    feedback, error = feedback_services.delete_feedback(feedback_id, current_user_email)
+    current_user_id = get_jwt_identity()
+    feedback, error = feedback_services.delete_feedback(feedback_id, current_user_id)
     if error:
         return jsonify({"msg": error}), 403 if error == "Unauthorized" else 404
     return jsonify({"msg": "Feedback deleted"}), 200
