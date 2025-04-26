@@ -105,7 +105,7 @@ def seed_product(app):
             stock_quantity=10,
             unit_quantity="250g",
             image_url="http://example.com/test.jpg",
-            location="Test City",
+            #location="Test City",
             featured=False,
             flash_sale=False,
             vendor_id=1

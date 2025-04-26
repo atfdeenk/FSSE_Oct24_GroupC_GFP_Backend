@@ -66,7 +66,9 @@ from flask import current_app
 def create_product_with_serialization(data: dict):
     claims = get_jwt()
     vendor_id = claims.get("sub")
+    vendor_city = claims.get("city", "Unknown")
     data["vendor_id"] = vendor_id
+    data["location"] = vendor_city
 
     try:
         data["price"] = Decimal(data["price"])
