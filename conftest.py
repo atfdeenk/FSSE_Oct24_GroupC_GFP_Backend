@@ -7,6 +7,7 @@ from models.product import Products
 from models.product_category import ProductCategories
 from models.category import Categories
 
+
 @pytest.fixture(scope="function")
 def app():
     """Create a Flask application instance for testing."""
@@ -26,6 +27,7 @@ def app():
     import models.wishlist_item
 
     return app
+
 
 @pytest.fixture(scope="function")
 def init_db(app):
@@ -52,17 +54,62 @@ def init_db(app):
             role="vendor",
             bank_account="1234567890",
             bank_name="BNI",
-            is_active=True
+            is_active=True,
         )
         db.session.add(vendor)
 
+        customer = Users(
+            id=2,
+            username="customeruser",
+            first_name="Test",
+            last_name="Customer",
+            email="customer@mail.com",
+            phone="089876543210",
+            password_hash="test",
+            date_of_birth="1992-05-05",
+            address="Another Street 456",
+            city="Bandung",
+            state="West Java",
+            country="Indonesia",
+            zip_code="54321",
+            image_url="https://example.com/customer.png",
+            role="customer",
+            bank_account="9876543210",
+            bank_name="BCA",
+            is_active=True,
+        )
+        db.session.add(customer)
+
+        admin = Users(
+            id=3,
+            username="adminuser",
+            first_name="Admin",
+            last_name="User",
+            email="admin@mail.com",
+            phone="087654321098",
+            password_hash="test",
+            date_of_birth="1985-09-09",
+            address="Admin Street 789",
+            city="Surabaya",
+            state="East Java",
+            country="Indonesia",
+            zip_code="67890",
+            image_url="https://example.com/admin.png",
+            role="admin",
+            bank_account="1234567890",
+            bank_name="BNI",
+            is_active=True,
+        )
+        db.session.add(admin)
+
         # ✅ Seed category with ID 1
         from models.category import Categories
+
         category = Categories(
             id=1,
             name="Test Category",
             slug="test-category",
-            vendor_id=1  # Required field to pass NOT NULL constraint
+            vendor_id=1,  # Required field to pass NOT NULL constraint
         )
         db.session.add(category)
 
@@ -70,27 +117,34 @@ def init_db(app):
         yield
         db.drop_all()
 
+
 @pytest.fixture
 def client(app, init_db):
     """Create a test client for the Flask application."""
     return app.test_client()
 
+
 @pytest.fixture
 def vendor_token(app):
     with app.app_context():
-        return create_access_token(identity=str(1), additional_claims={"role": "vendor"})
+        return create_access_token(
+            identity=str(1), additional_claims={"role": "vendor"}
+        )
+
 
 @pytest.fixture
 def customer_token(app):
     with app.app_context():
-        return create_access_token(identity=str(2), additional_claims={"role": "customer"})
+        return create_access_token(
+            identity=str(2), additional_claims={"role": "customer"}
+        )
+
 
 @pytest.fixture
 def admin_token(app):
     with app.app_context():
         return create_access_token(identity=str(3), additional_claims={"role": "admin"})
-    
-    
+
 
 @pytest.fixture
 def seed_product(app):
@@ -108,7 +162,7 @@ def seed_product(app):
             location="Test City",
             featured=False,
             flash_sale=False,
-            vendor_id=1
+            vendor_id=1,
         )
         db.session.add(product)
 
@@ -118,4 +172,3 @@ def seed_product(app):
 
         db.session.commit()
         yield product
-
