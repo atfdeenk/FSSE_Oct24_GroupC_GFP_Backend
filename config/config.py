@@ -16,6 +16,7 @@ class BaseConfig:
         "max_overflow": 10,  # extra temporary connections
         "pool_timeout": 30,  # 30s wait before timeout
         "pool_recycle": 1800,  # recycle connections every 30 mins
+        "pool_pre_ping": True,  # check if connection is alive before using it
     }
 
 
