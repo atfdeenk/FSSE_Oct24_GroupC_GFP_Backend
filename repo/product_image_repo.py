@@ -12,6 +12,27 @@ def create_product_images(product_id, image1=None, image2=None, image3=None):
     db.session.commit()
     return image_entry
 
+def save_uploaded_filename(product_id, filename):
+    images = ProductImages.query.filter_by(product_id=product_id).first()
+    if not images:
+        # Create a new entry if not exists
+        images = ProductImages(product_id=product_id)
+        db.session.add(images)
+
+    # Logic to fill first empty slot
+    if not images.image1_url:
+        images.image1_url = filename
+    elif not images.image2_url:
+        images.image2_url = filename
+    elif not images.image3_url:
+        images.image3_url = filename
+    else:
+        # All 3 slots are full, you can raise error or overwrite first one if you want
+        images.image1_url = filename
+
+    db.session.commit()
+    return images
+
 def get_product_images(product_id):
     return ProductImages.query.filter_by(product_id=product_id).first()
 
