@@ -1,6 +1,5 @@
 import os
 
-
 class LocalConfig:
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = os.getenv(
@@ -9,3 +8,11 @@ class LocalConfig:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "testing-secret-key")
+
+    # ➡️ Tambahin ini:
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_size": 5,
+        "max_overflow": 2,
+        "pool_timeout": 30,
+        "pool_recycle": 1800,
+    }
