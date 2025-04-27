@@ -13,16 +13,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the source code
 COPY . .
 
-# Set environment variables for Flask
+# Set environment variables
 ENV FLASK_APP=app.py
-ENV FLASK_ENV=remote
-
-# Verify gunicorn installation (optional, can be removed after verification)
-RUN which gunicorn && gunicorn --version
+ENV CONFIG_MODULE=config.config.ProductionConfig
+ENV FLASK_ENV=production
 
 # Expose port
 EXPOSE 5000
 
-# Run production server (use PORT environment variable if available)
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 4 app:app"]
-
+# Run production server
+CMD ["gunicorn", "--bind", "0.0.0.0:${PORT:-5000}", "--workers", "4", "app:app"]

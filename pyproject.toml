@@ -17,6 +17,7 @@ dependencies = [
     "black",
     "isort",
     "taskipy>=1.14.1",
+    "flask-cors>=5.0.1",
 ]
 [tool.taskipy.tasks]
 fr = "flask --app app run --port 8000 --reload --debug"
