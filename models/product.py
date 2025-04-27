@@ -26,7 +26,9 @@ class Products(db.Model):
     flash_sale: bool = db.Column(db.Boolean, default=False)
 
     vendor_id: int = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    vendor = db.relationship("Users", back_populates="products", overlaps="vendor,products")
+    vendor = db.relationship(
+        "Users", back_populates="products", overlaps="vendor,products"
+    )
 
     @property
     def location(self):
@@ -42,9 +44,8 @@ class Products(db.Model):
         lazy=True,
         cascade="all, delete-orphan",
         passive_deletes=True,
-        overlaps="categories_linked,products_linked,category"
+        overlaps="categories_linked,products_linked,category",
     )
-
 
     categories_linked = db.relationship(
         "Categories",
@@ -52,22 +53,21 @@ class Products(db.Model):
         backref=db.backref(
             "products_linked",
             lazy="joined",
-            overlaps="categories,categories_linked,product"
+            overlaps="categories,categories_linked,product",
         ),
         lazy="joined",
-        overlaps="categories,product,products"
+        overlaps="categories,product,products",
     )
 
-
-    
     images = db.relationship("ProductImages", backref="product", lazy=True)
-    order_items = db.relationship("OrderItems", backref="product", lazy=True)
+    order_items = db.relationship("OrderItems", back_populates="product", lazy=True)
     cart_items = db.relationship("CartItems", backref="product", lazy=True)
     feedback = db.relationship("Feedbacks", backref="product", lazy=True)
     wishlist_items = db.relationship("WishlistItems", backref="product", lazy=True)
 
     def __repr__(self):
         return f"<Product {self.name}>"
+
 
 # This alias exists ONLY to satisfy `db.relationship("Product")`
 Product = Products

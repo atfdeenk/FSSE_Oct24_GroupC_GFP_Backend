@@ -22,7 +22,7 @@ def get_all_feedback(page=1, per_page=10):
 
 
 def delete_feedback(feedback_id, user_id):
-    feedback = Feedbacks.query.get(feedback_id)
+    feedback = db.session.get(Feedbacks, feedback_id)
     if not feedback:
         return None, "Feedback not found"
     if feedback.user_id != user_id:
