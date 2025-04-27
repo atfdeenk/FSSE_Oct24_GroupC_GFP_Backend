@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 
 # Import routes
 from route.index import index_router
@@ -22,6 +23,9 @@ def create_app(config_module="config.testing"):
 
     # Load configuration settings
     app.config.from_object(config_module)
+
+    # Enable CORS
+    CORS(app)
 
     # Initialize JWTManager here
     jwt = JWTManager(app)
