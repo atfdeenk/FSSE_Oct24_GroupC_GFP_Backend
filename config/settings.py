@@ -1,7 +1,13 @@
+# config/settings.py
+
+import os
 from flask import Flask
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager
+import models  # noqa: F401
+from instance.database import init_db
 
-# Import routes
+# Import blueprints
 from route.index import index_router
 from route.auth_route import auth_bp
 from route.product_route import product_bp
@@ -11,36 +17,30 @@ from route.cart_route import cart_bp
 from route.category_route import category_bp
 from route.feedback_route import feedback_bp
 from route.order_route import order_bp
-from flask_jwt_extended import JWTManager  # Import the JWTManager
 
 
-import models  # noqa: F401
-from instance.database import init_db
-
-
-def create_app(config_module="config.testing"):
+def create_app(config_module=None):
     app = Flask(__name__)
 
-    # Load configuration settings
-    app.config.from_object(config_module)
+    # Determine configuration
+    config_path = config_module or os.getenv(
+        "CONFIG_MODULE", "config.config.LocalConfig"
+    )
+    app.config.from_object(config_path)
 
-    # Enable CORS
+    # Setup extensions
     CORS(app)
-
-    # Initialize JWTManager here
-    jwt = JWTManager(app)
-
-    # Initialize the database
+    JWTManager(app)
     init_db(app)
 
-    # Add teardown_appcontext handler to remove db session after each request
+    # Teardown after each request
     @app.teardown_appcontext
     def shutdown_session(exception=None):
         from instance.database import db
 
         db.session.remove()
 
-    # Register routes
+    # Register blueprints
     app.register_blueprint(index_router)
     app.register_blueprint(auth_bp)
     app.register_blueprint(product_bp)
