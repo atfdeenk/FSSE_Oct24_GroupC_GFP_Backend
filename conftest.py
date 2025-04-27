@@ -157,7 +157,7 @@ def seed_product(app):
             stock_quantity=10,
             unit_quantity="250g",
             image_url="http://example.com/test.jpg",
-            #location="Test City",
+            # location="Test City",
             featured=False,
             flash_sale=False,
             vendor_id=1,
@@ -168,5 +168,53 @@ def seed_product(app):
         pc = ProductCategories(product_id=1, category_id=1)
         db.session.add(pc)
 
+        db.session.commit()
+        yield product
+
+
+@pytest.fixture
+def new_user(app):
+    with app.app_context():
+        user = Users(
+            username="newuser",
+            first_name="New",
+            last_name="User",
+            email="newuser@mail.com",
+            phone="081122334455",
+            password_hash="newpassword",
+            date_of_birth="1995-01-01",
+            address="New Street 123",
+            city="New City",
+            state="New State",
+            country="New Country",
+            zip_code="11111",
+            image_url="https://example.com/newuser.png",
+            role="customer",
+            bank_account="111222333",
+            bank_name="New Bank",
+            is_active=True,
+        )
+        db.session.add(user)
+        db.session.commit()
+        yield user
+
+
+@pytest.fixture
+def new_product(app):
+    with app.app_context():
+        product = Products(
+            name="New Product",
+            slug="new-product",
+            description="New product description",
+            currency="IDR",
+            price=90000,
+            stock_quantity=20,
+            unit_quantity="500g",
+            image_url="http://example.com/newproduct.jpg",
+            featured=False,
+            flash_sale=False,
+            vendor_id=1,
+        )
+        db.session.add(product)
         db.session.commit()
         yield product
