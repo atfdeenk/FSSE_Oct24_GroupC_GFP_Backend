@@ -33,9 +33,15 @@ def add_to_wishlist():
     data = request.get_json()
     product_id = data.get("product_id")
     vendor_id = data.get("vendor_id")
+
     if not product_id or not vendor_id:
         return jsonify({"error": "Missing product_id or vendor_id"}), 400
+
     item = wishlist_services.add_to_wishlist(user_id, product_id, vendor_id)
+
+    if item is None:
+        return jsonify({"message": "Item already exists in wishlist"}), 200
+
     return jsonify({"message": "Item added to wishlist", "id": item.id}), 201
 
 
