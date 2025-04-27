@@ -1,8 +1,35 @@
-from flask import Blueprint, request, jsonify
+import os
+from flask import Blueprint, request, jsonify, send_from_directory
 from services import product_image_services as product_image_service
 from shared.auth import role_required
+from werkzeug.utils import secure_filename
 
 product_image_bp = Blueprint("product_image_bp", __name__)
+
+UPLOAD_FOLDER = "uploads"
+
+@product_image_bp.route("/products/<int:product_id>/upload-image", methods=["POST"])
+@role_required("vendor")
+def upload_image(product_id):
+    if 'image' not in request.files:
+        return jsonify({"message": "No file part in the request"}), 400
+
+    file = request.files['image']
+
+    if file.filename == '':
+        return jsonify({"message": "No selected file"}), 400
+
+    result = product_image_service.save_uploaded_image(product_id, file)
+
+    if not result:
+        return jsonify({"message": "Failed to upload image"}), 500
+
+    return jsonify({
+        "message": "Image uploaded successfully",
+        "filename": result['filename'],
+        "url": result['url']
+    }), 201
+
 
 @product_image_bp.route("/products/<int:product_id>/images", methods=["POST"])
 @role_required("vendor")
@@ -49,4 +76,5 @@ def delete_images(product_id):
     if not success:
         return jsonify({"message": "Images not found"}), 404
     return jsonify({"message": "Images deleted"}), 200
+
 

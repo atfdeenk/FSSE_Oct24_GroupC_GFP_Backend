@@ -1,4 +1,5 @@
-from flask import Flask
+from flask import Flask, send_from_directory, current_app
+import os
 
 # Import routes
 from route.index import index_router
@@ -10,6 +11,7 @@ from route.cart_route import cart_bp
 from route.category_route import category_bp
 from route.feedback_route import feedback_bp
 from flask_jwt_extended import JWTManager  # Import the JWTManager
+from flask import send_from_directory
 
 
 import models  # noqa: F401
@@ -38,4 +40,11 @@ def create_app(config_module="config.testing"):
     app.register_blueprint(category_bp)
     app.register_blueprint(feedback_bp)
 
+    @app.route('/uploads/<path:filename>')
+    def serve_uploads(filename):
+        uploads_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'uploads'))
+        return send_from_directory(uploads_path, filename)
+
     return app
+
+

@@ -8,3 +8,6 @@ from instance.database import db
 app = create_app(LocalConfig)
 
 
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db.session.remove()
