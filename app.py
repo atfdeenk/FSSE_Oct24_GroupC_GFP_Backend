@@ -5,7 +5,7 @@ from instance.database import db
 
 
 # Initialize the Flask application
-app = create_app(LocalConfig)
+app = create_app()
 
 
 @app.teardown_appcontext
