@@ -10,9 +10,9 @@ class LocalConfig:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "testing-secret-key")
 
-    # Add engine options to limit connection pool size and overflow
+    # Reduce pool size and max overflow to strictly limit simultaneous connections
     SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_size": 5,
+        "pool_size": 1,
         "max_overflow": 0,
         "pool_timeout": 30,
         "pool_recycle": 1800,

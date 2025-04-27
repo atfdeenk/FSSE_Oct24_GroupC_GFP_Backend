@@ -33,6 +33,13 @@ def create_app(config_module="config.testing"):
     # Initialize the database
     init_db(app)
 
+    # Add teardown_appcontext handler to remove db session after each request
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        from instance.database import db
+
+        db.session.remove()
+
     # Register routes
     app.register_blueprint(index_router)
     app.register_blueprint(auth_bp)
