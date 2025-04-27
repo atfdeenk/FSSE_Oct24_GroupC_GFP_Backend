@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 
 # Import routes
 from route.index import index_router
@@ -9,6 +10,7 @@ from route.product_image_route import product_image_bp
 from route.cart_route import cart_bp
 from route.category_route import category_bp
 from route.feedback_route import feedback_bp
+from route.order_route import order_bp
 from flask_jwt_extended import JWTManager  # Import the JWTManager
 
 
@@ -22,11 +24,21 @@ def create_app(config_module="config.testing"):
     # Load configuration settings
     app.config.from_object(config_module)
 
+    # Enable CORS
+    CORS(app)
+
     # Initialize JWTManager here
     jwt = JWTManager(app)
 
     # Initialize the database
     init_db(app)
+
+    # Add teardown_appcontext handler to remove db session after each request
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        from instance.database import db
+
+        db.session.remove()
 
     # Register routes
     app.register_blueprint(index_router)
@@ -37,5 +49,6 @@ def create_app(config_module="config.testing"):
     app.register_blueprint(cart_bp)
     app.register_blueprint(category_bp)
     app.register_blueprint(feedback_bp)
+    app.register_blueprint(order_bp)
 
     return app
