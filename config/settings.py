@@ -35,7 +35,6 @@ def create_app(config_module="Config.testing"):
 
     # Setup extensions
     JWTManager(app)
-    CORS(app, supports_credentials=True)
     init_db(app)
 
     # Teardown after each request
