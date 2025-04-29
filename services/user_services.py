@@ -151,3 +151,26 @@ def get_user_by_id_with_admin_check(target_user_id, current_user_role):
         return None, "Unauthorized to view admin accounts"
 
     return user, None
+
+
+
+def get_user_balance_service(user_id: int, current_user_id: int, current_user_role: str):
+    user = user_repo.get_user_by_id(user_id)
+    if not user:
+        return None, "User not found"
+
+    if current_user_id != user.id and current_user_role != "admin":
+        return None, "Unauthorized"
+
+    return user.balance or 0.0, None
+
+def update_my_balance_service(user_id: int, new_balance: float):
+    user = user_repo.get_user_by_id(user_id)
+
+    if not user:
+        return None, "User not found"
+
+    from decimal import Decimal
+    updated_user = user_repo.update_user_balance(user_id, Decimal(str(new_balance)))
+    return updated_user, None
+

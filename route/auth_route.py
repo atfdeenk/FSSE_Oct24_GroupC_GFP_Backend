@@ -169,8 +169,6 @@ def get_user_by_id(user_id):
 
 
 
-
-
 @auth_bp.route("/users/admins", methods=["GET"])
 @jwt_required()
 @role_required("admin")
@@ -186,3 +184,44 @@ def get_admin_users():
         }
         for u in users
     ]), 200
+
+
+@auth_bp.route("/me/balance", methods=["GET"])
+@jwt_required()
+@role_required("customer", "vendor")
+def get_my_balance():
+    current_user_id = int(get_jwt_identity())
+
+    user = user_services.get_user_by_id(current_user_id)
+    if not user:
+        return jsonify({"msg": "User not found"}), 404
+
+    return jsonify({
+        "balance": float(user.balance or 0.0)
+    }), 200
+
+@auth_bp.route("/me/balance", methods=["PATCH"])
+@jwt_required()
+@role_required("customer", "vendor")
+def update_my_balance():
+    data = request.get_json()
+    new_balance = data.get("balance")
+
+    if new_balance is None:
+        return jsonify({"msg": "Missing balance value"}), 400
+
+    if new_balance < 0:
+        return jsonify({"msg": "Balance cannot be negative"}), 400
+
+    current_user_id = int(get_jwt_identity())
+
+    updated_user, error = user_services.update_my_balance_service(current_user_id, new_balance)
+
+    if error:
+        return jsonify({"msg": error}), 404
+
+    return jsonify({
+        "msg": "Balance updated successfully",
+        "balance": float(updated_user.balance),
+    }), 200
+
