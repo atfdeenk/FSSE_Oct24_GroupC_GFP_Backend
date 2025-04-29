@@ -3,6 +3,7 @@ from repo import product_repo
 from models.product import Products
 from decimal import Decimal
 from flask_jwt_extended import get_jwt
+from repo import product_repo
 
 
 def serialize_product(product: Products) -> dict:
@@ -22,7 +23,15 @@ def serialize_product(product: Products) -> dict:
         "flash_sale": product.flash_sale,
         "vendor_id": product.vendor_id,
         "created_at": product.created_at.isoformat() if product.created_at else None,
-        "updated_at": product.updated_at.isoformat() if product.updated_at else None
+        "updated_at": product.updated_at.isoformat() if product.updated_at else None,
+        "categories": [
+            {
+                "id": category.id,
+                "name": category.name,
+                "slug": category.slug,
+            }
+            for category in product.categories_linked
+        ],
     }
 
 
@@ -112,5 +121,11 @@ def delete_product_and_return_message(product_id: int):
     if not product:
         return None
     return {"message": "Product deleted"}
+
+def approve_product_by_id(product_id: int):
+    product = product_repo.approve_product(product_id)
+    if not product:
+        raise ValueError("Product not found")
+    return serialize_product(product)
 
 

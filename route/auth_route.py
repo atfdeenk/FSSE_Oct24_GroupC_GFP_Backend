@@ -127,9 +127,10 @@ def delete_user(user_id):
     current_user_id = int(get_jwt_identity())
     current_user_role = get_jwt().get("role")
 
-    user, error = user_services.delete_user(user_id, current_user_id, current_user_role)
+    response_message, error = user_services.delete_user(user_id, current_user_id, current_user_role)
 
     if error:
         return jsonify({"msg": error}), 403 if error == "Unauthorized" else 404
 
-    return jsonify({"msg": "User deleted successfully"}), 200
+    return jsonify(response_message), 200
+

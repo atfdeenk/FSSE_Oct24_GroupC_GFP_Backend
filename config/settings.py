@@ -2,7 +2,6 @@
 
 import os
 from flask import Flask, send_from_directory, current_app
-from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 import models  # noqa: F401
 from instance.database import init_db
@@ -14,22 +13,22 @@ from route.product_route import product_bp
 from route.product_category_routes import product_category_bp
 from route.product_image_route import product_image_bp
 from route.cart_route import cart_bp
-from route.category_route import category_bp
-from route.feedback_route import feedback_bp
-from route.order_route import order_bp
+#from route.category_route import category_bp
+#from route.feedback_route import feedback_bp
+#from route.order_route import order_bp
 
 
-def create_app(config_module=None):
+def create_app(config_module="Config.testing"):
     app = Flask(__name__)
 
     # Determine configuration
     config_path = config_module or os.getenv(
         "CONFIG_MODULE", "config.config.LocalConfig"
     )
-    app.config.from_object(config_path)
+    app.config.from_object(config_module)
 
     # Setup extensions
-    CORS(app)
+   
     JWTManager(app)
     init_db(app)
 
@@ -47,9 +46,9 @@ def create_app(config_module=None):
     app.register_blueprint(product_category_bp)
     app.register_blueprint(product_image_bp)
     app.register_blueprint(cart_bp)
-    app.register_blueprint(category_bp)
-    app.register_blueprint(feedback_bp)
-    app.register_blueprint(order_bp)
+    #app.register_blueprint(category_bp)
+    #app.register_blueprint(feedback_bp)
+    #app.register_blueprint(order_bp)
 
     @app.route("/uploads/<path:filename>")
     def serve_uploads(filename):
