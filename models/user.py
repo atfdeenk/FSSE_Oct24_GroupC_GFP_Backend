@@ -3,6 +3,7 @@ from datetime import datetime
 from shared import crono
 from models.product import Products as Product
 import enum
+from decimal import Decimal
 
 
 class RoleType(enum.Enum):
@@ -33,6 +34,8 @@ class Users(db.Model):
     role: str = db.Column(db.Enum(RoleType), nullable=False)
     bank_account: str = db.Column(db.String(20), nullable=False)
     bank_name: str = db.Column(db.String(80), nullable=False)
+    balance: Decimal = db.Column(db.Numeric(precision=10, scale=2), default=Decimal('0.00'))
+
     is_active: bool = db.Column(db.Boolean, default=True)
     created_at: datetime = db.Column(db.DateTime, default=crono.now)
     updated_at: datetime = db.Column(db.DateTime, default=crono.now, onupdate=crono.now)

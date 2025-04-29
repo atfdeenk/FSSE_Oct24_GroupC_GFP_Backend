@@ -1,6 +1,7 @@
 import pytest
 from instance.database import db
 import json
+from unittest.mock import patch
 
 
 def test_create_feedback(client, customer_token, seed_product):
@@ -15,6 +16,21 @@ def test_create_feedback(client, customer_token, seed_product):
     data = response.get_json()
     assert "id" in data
     assert data["msg"] == "Feedback submitted"
+
+
+def test_create_feedback_rollback(client, customer_token, seed_product):
+    payload = {"product_id": seed_product.id, "rating": 4, "comment": "Great coffee!"}
+    with patch("repo.feedback_repo.create_feedback") as mock_create_feedback:
+        mock_create_feedback.side_effect = Exception("DB error")
+        response = client.post(
+            "/feedback",
+            headers={"Authorization": f"Bearer {customer_token}"},
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data["msg"] == "Failed to create feedback"
 
 
 def test_get_feedback_by_product(client, customer_token, seed_product):

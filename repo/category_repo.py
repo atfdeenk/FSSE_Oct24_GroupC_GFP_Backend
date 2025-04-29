@@ -7,7 +7,11 @@ from models.category import Categories
 def create_category(data):
     category = Categories(**data)
     db.session.add(category)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
     return category
 
 
@@ -22,10 +26,18 @@ def get_category_by_id(category_id):
 def update_category(category, data):
     for key, value in data.items():
         setattr(category, key, value)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
     return category
 
 
 def delete_category(category):
     db.session.delete(category)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
