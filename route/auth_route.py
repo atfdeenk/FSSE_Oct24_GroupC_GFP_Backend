@@ -97,7 +97,7 @@ def update_user(user_id):
     return jsonify({"msg": "User updated successfully"}), 200
 
 
-@auth_bp.route("/users", methods=["GET"])
+@auth_bp.route("/users/all", methods=["GET"])
 @jwt_required()
 @role_required("admin")  # Admin-only
 def get_all_users():
@@ -134,3 +134,55 @@ def delete_user(user_id):
 
     return jsonify(response_message), 200
 
+
+@auth_bp.route("/users", methods=["GET"])
+@jwt_required()
+def get_all_non_admin_users():
+    users = user_services.get_all_non_admin_users()
+    return jsonify([
+        {
+            "id": u.id,
+            "username": u.username,
+            "city": u.city,
+            "image_url": u.image_url,
+            "role": u.role.value,
+        }
+        for u in users
+    ]), 200
+
+@auth_bp.route("/users/<int:user_id>", methods=["GET"])
+@jwt_required()
+def get_user_by_id(user_id):
+    current_user_role = get_jwt().get("role")
+
+    user, error = user_services.get_user_by_id_with_admin_check(user_id, current_user_role)
+    if error:
+        return jsonify({"msg": error}), 403 if error == "Unauthorized to view admin accounts" else 404
+
+    return jsonify({
+        "id": user.id,
+        "username": user.username,
+        "city": user.city,
+        "image_url": user.image_url,
+        "role": user.role.value,
+    }), 200
+
+
+
+
+
+@auth_bp.route("/users/admins", methods=["GET"])
+@jwt_required()
+@role_required("admin")
+def get_admin_users():
+    users = user_services.get_admin_users()
+    return jsonify([
+        {
+            "id": u.id,
+            "username": u.username,
+            "city": u.city,
+            "image_url": u.image_url,
+            "role": u.role.value,
+        }
+        for u in users
+    ]), 200

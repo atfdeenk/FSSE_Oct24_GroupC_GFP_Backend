@@ -26,6 +26,7 @@ def serialize_product(product: Products) -> dict:
         "featured": product.featured,
         "flash_sale": product.flash_sale,
         "vendor_id": product.vendor_id,
+        "vendor_name": product.vendor.username if product.vendor else None,  # ✅ ADD THIS LINE
         "created_at": product.created_at.isoformat() if product.created_at else None,
         "updated_at": product.updated_at.isoformat() if product.updated_at else None,
         "categories": [
@@ -39,14 +40,8 @@ def serialize_product(product: Products) -> dict:
     }
 
 
-def get_all_serialized_products(
-    search=None,
-    category_id=None,
-    page=1,
-    limit=10,
-    sort_by="created_at",
-    sort_order="desc",
-):
+
+def get_all_serialized_products(search=None, category_id=None, page=1, limit=10, sort_by="created_at", sort_order="desc"):
     products, total = product_repo.get_all_products_filtered(
         search=search,
         category_id=category_id,
