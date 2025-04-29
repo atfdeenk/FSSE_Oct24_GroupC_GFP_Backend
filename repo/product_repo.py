@@ -67,7 +67,7 @@ def delete_product(product_id):
 from sqlalchemy.orm import aliased
 
 def get_all_products_filtered(search=None, category_id=None, page=1, limit=10, sort_by="created_at", sort_order="desc"):
-    query = Products.query
+    query = Products.query.filter(Products.is_approved == True)
 
     if search:
         # ✅ Join Users table first
@@ -103,3 +103,11 @@ def get_all_products_filtered(search=None, category_id=None, page=1, limit=10, s
     print("[DEBUG] Sort Order:", sort_order)
 
     return products, total
+
+def approve_product(product_id: int) -> Products:
+    product = db.session.get(Products, product_id)
+    if not product:
+        return None
+    product.is_approved = True
+    db.session.commit()
+    return product
