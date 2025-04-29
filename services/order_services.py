@@ -49,7 +49,7 @@ def create_order_with_items(user_id, items):
                         "vendor_id": product.vendor_id,
                     }
                 )
-
+        db.session.commit()
         return order, None
 
     except (IntegrityError, ValueError) as e:
