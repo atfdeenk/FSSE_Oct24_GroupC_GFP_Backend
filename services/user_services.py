@@ -29,6 +29,7 @@ def create_user(data):
         return user
     except IntegrityError as e:
         print("IntegrityError:", e)  # Debug output
+        db.session.rollback()
         return None
 
 
@@ -91,7 +92,11 @@ def delete_user(target_user_id, current_user_id, current_user_role):
 
     # Step 2: Delete the user itself
     db.session.delete(user)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
 
     # Step 3: Return success message
     if deleted_products_count > 0:
@@ -99,10 +104,7 @@ def delete_user(target_user_id, current_user_id, current_user_role):
             "message": f"Seller and {deleted_products_count} product(s) deleted successfully"
         }, None
     else:
-        return {
-            "message": "User deleted successfully"
-        }, None
-
+        return {"message": "User deleted successfully"}, None
 
 
 def get_me_service():
