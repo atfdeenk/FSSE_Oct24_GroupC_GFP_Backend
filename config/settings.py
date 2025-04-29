@@ -4,6 +4,7 @@ import os
 from flask import Flask, send_from_directory, current_app
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from flask_cors import CORS
 import models  # noqa: F401
 from instance.database import init_db
 

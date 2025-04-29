@@ -20,7 +20,11 @@ def add_to_wishlist(user_id: int, product_id: int, vendor_id: int):
     # Otherwise, create a new wishlist item
     item = WishlistItems(user_id=user_id, product_id=product_id, vendor_id=vendor_id)
     db.session.add(item)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
     return item
 
 
