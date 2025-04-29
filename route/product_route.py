@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from shared.auth import role_required
 from services.product_services import (
     get_all_serialized_products,
@@ -7,7 +7,9 @@ from services.product_services import (
     create_product_with_serialization,
     update_product_with_serialization,
     delete_product_and_return_message,
+    approve_product_by_id,  # Add this if needed
 )
+import services.product_services as product_services
 
 product_bp = Blueprint("product_bp", __name__)
 
@@ -16,10 +18,28 @@ product_bp = Blueprint("product_bp", __name__)
 def get_all_products():
     search = request.args.get("search")
     category_id = request.args.get("category_id", type=int)
+    category_slug = request.args.get("category", type=str)  # 🆕 Support category slug
     page = request.args.get("page", default=1, type=int)
     limit = request.args.get("limit", default=10, type=int)
     sort_by = request.args.get("sort_by", default="created_at", type=str)
     sort_order = request.args.get("sort_order", default="desc", type=str)
+
+    # 🆕 If frontend sends category slug
+    if category_slug and not category_id:
+        from models.category import Categories
+        from instance.database import db
+
+        category = db.session.query(Categories).filter_by(slug=category_slug).first()
+        if category:
+            category_id = category.id
+        else:
+            # If no matching category found, return empty list early
+            return jsonify({
+                "products": [],
+                "total": 0,
+                "page": page,
+                "limit": limit
+            }), 200
 
     products = get_all_serialized_products(
         search=search,
@@ -79,3 +99,14 @@ def delete_product(product_id):
     if not result:
         return jsonify({"message": "Product not found"}), 404
     return jsonify(result), 200
+
+
+@product_bp.route("/products/<int:product_id>/approve", methods=["PATCH"])
+@jwt_required()
+@role_required("admin")
+def approve_product(product_id):
+    try:
+        result = product_services.approve_product_by_id(product_id)
+        return {"message": "Product approved"}, 200
+    except ValueError as e:
+        return {"message": str(e)}, 404

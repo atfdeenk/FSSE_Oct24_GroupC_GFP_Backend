@@ -2,6 +2,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from repo import user_repo
 from models.user import Users
 from models.product import Products
+from models.feedback import Feedbacks
 from sqlalchemy.exc import IntegrityError
 from flask_jwt_extended import get_jwt_identity
 from repo.user_repo import get_user_by_id
@@ -74,15 +75,34 @@ def delete_user(target_user_id, current_user_id, current_user_role):
     if not user:
         return None, "User not found"
 
-    # ✅ Block deletion if vendor has products
-    if user.role.value == "vendor":
-        product_count = Products.query.filter_by(vendor_id=user.id).count()
-        if product_count > 0:
-            return None, "Cannot delete vendor with existing products"
+    deleted_products_count = 0
 
+    if user.role.value == "vendor":
+        # Step 1: Delete all products belonging to this vendor
+        products = Products.query.filter_by(vendor_id=user.id).all()
+        deleted_products_count = len(products)
+
+        for product in products:
+            # 🆕 Step 1A: Delete feedbacks linked to this product first
+            db.session.query(Feedbacks).filter_by(product_id=product.id).delete()
+
+            # 🆕 Step 1B: Now safe to delete the product
+            db.session.delete(product)
+
+    # Step 2: Delete the user itself
     db.session.delete(user)
     db.session.commit()
-    return user, None
+
+    # Step 3: Return success message
+    if deleted_products_count > 0:
+        return {
+            "message": f"Seller and {deleted_products_count} product(s) deleted successfully"
+        }, None
+    else:
+        return {
+            "message": "User deleted successfully"
+        }, None
+
 
 
 def get_me_service():

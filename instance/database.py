@@ -18,4 +18,7 @@ migrate = Migrate()
 def init_db(app):
     db.init_app(app)
     migrate.init_app(app, db)
+    print(
+        "[INFO] SQLAlchemy engine options:", app.config.get("SQLALCHEMY_ENGINE_OPTIONS")
+    )
     # Initialize the database and migration engine
