@@ -5,10 +5,14 @@ from instance.database import db
 
 # Order Repo
 def create_order(order_data):
-    order = Orders(**order_data)
-    db.session.add(order)
-    db.session.flush()  # Make order.id available
-    return order
+    try:
+        order = Orders(**order_data)
+        db.session.add(order)
+        db.session.flush()  # Make order.id available
+        return order
+    except Exception:
+        db.session.rollback()
+        raise
 
 
 def get_order_by_id(order_id):
@@ -20,20 +24,31 @@ def get_orders_by_user(user_id):
 
 
 def update_order(order):
-    db.session.commit()
-    return order
+    try:
+        db.session.commit()
+        return order
+    except Exception:
+        db.session.rollback()
+        raise
 
 
 def delete_order(order):
-    db.session.delete(order)
-    db.session.commit()
+    try:
+        db.session.delete(order)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
 
 
 # Order Items Repo
 def create_order_item(item_data):
-    item = OrderItems(**item_data)
-    db.session.add(item)
-    return item
+    try:
+        item = OrderItems(**item_data)
+        db.session.add(item)
+        return item
+    except Exception:
+        db.session.rollback()
 
 
 def get_order_items_by_order_id(order_id):
