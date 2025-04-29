@@ -42,7 +42,7 @@ def test_register_user(client, sample_user_data):
         user = Users.query.filter_by(email=sample_user_data["email"]).first()
         assert user is not None
         assert user.email == sample_user_data["email"]
-        print(user)  # Debugging: Print user to verify it's created
+        
 
 def test_register_duplicate_email(client, sample_user_data):
     """Test registration with duplicate email."""
@@ -103,8 +103,7 @@ def test_get_me(client, app, sample_user_data):
         role_str = str(user.role.value)  # Ensure role is converted directly to string
 
         # Debugging: Print role and id to check the values
-        print(f"JWT Role: {role_str}")  # Should print something like 'customer'
-        print(f"JWT ID: {user_id_str}")  # Should print the user ID as string (e.g., '1')
+        
 
         # Create an access token with the string role and user ID
         access_token = create_access_token(
@@ -117,8 +116,7 @@ def test_get_me(client, app, sample_user_data):
         response = client.get("/me", headers=headers)
 
         # Debugging: Print response status and data
-        print(f"Response Status Code: {response.status_code}")
-        print(f"Response Data: {response.data}")
+        
 
         # Assertions to verify the response
        # Assert important fields exist and match
@@ -176,8 +174,7 @@ def test_update_profile(client, app, sample_user_data):
         response = client.patch(f"/users/{user.id}", json=update_data, headers=headers)
 
         # DEBUG: Print response for troubleshooting
-        print("PATCH /users/<id> response status:", response.status_code)
-        print("PATCH /users/<id> response body:", response.json)
+        
 
         assert response.status_code == 200
 
@@ -187,3 +184,123 @@ def test_update_profile(client, app, sample_user_data):
         updated_user = db.session.get(Users, user.id)
         assert updated_user.first_name == "Janet"
         assert updated_user.phone == "081234567892"
+
+
+def test_customer_cannot_access_admin_profile(client, customer_token, app):
+    """Customer should not be able to view admin profile."""
+    headers = {"Authorization": f"Bearer {customer_token}"}
+    admin_id = app.test_admin_id
+
+    response = client.get(f"/users/{admin_id}", headers=headers)
+    assert response.status_code == 403
+    assert response.json["msg"] == "Unauthorized to view admin accounts"
+
+
+def test_admin_can_view_vendor_profile(client, admin_token, app):
+    """Admin can view vendor profile."""
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    vendor_id = app.test_vendor_id
+
+    response = client.get(f"/users/{vendor_id}", headers=headers)
+    assert response.status_code == 200
+    assert response.json["username"].startswith("vendoruser")
+
+
+def test_customer_can_view_vendor_profile(client, customer_token, app):
+    """Customer can view vendor profile."""
+    headers = {"Authorization": f"Bearer {customer_token}"}
+    vendor_id = app.test_vendor_id
+
+    response = client.get(f"/users/{vendor_id}", headers=headers)
+    assert response.status_code == 200
+    assert response.json["username"].startswith("vendoruser")
+
+
+def test_customer_access_nonexistent_user(client, customer_token):
+    """Customer should get 404 for a user that doesn't exist."""
+    headers = {"Authorization": f"Bearer {customer_token}"}
+    nonexistent_id = 9999  # Assuming this ID is not seeded
+
+    response = client.get(f"/users/{nonexistent_id}", headers=headers)
+    assert response.status_code == 404
+    assert response.json["msg"] == "User not found"
+
+def test_customer_can_access_users_list(client, customer_token):
+    """Customer can get non-admin users via /users."""
+    headers = {"Authorization": f"Bearer {customer_token}"}
+    response = client.get("/users", headers=headers)
+    assert response.status_code == 200
+    assert all(u["role"] != "admin" for u in response.json)
+
+
+def test_vendor_can_access_users_list(client, vendor_token):
+    """Vendor can get non-admin users via /users."""
+    headers = {"Authorization": f"Bearer {vendor_token}"}
+    response = client.get("/users", headers=headers)
+    assert response.status_code == 200
+    assert all(u["role"] != "admin" for u in response.json)
+
+
+def test_admin_can_access_admin_list(client, admin_token):
+    """Admin can access /users/admins."""
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    response = client.get("/users/admins", headers=headers)
+    assert response.status_code == 200
+    assert all(u["role"] == "admin" for u in response.json)
+
+
+def test_customer_cannot_access_admin_list(client, customer_token):
+    """Customer cannot access /users/admins."""
+    headers = {"Authorization": f"Bearer {customer_token}"}
+    response = client.get("/users/admins", headers=headers)
+    assert response.status_code == 403
+
+
+def test_vendor_cannot_access_admin_list(client, vendor_token):
+    """Vendor cannot access /users/admins."""
+    headers = {"Authorization": f"Bearer {vendor_token}"}
+    response = client.get("/users/admins", headers=headers)
+    assert response.status_code == 403
+
+def test_customer_get_balance(client, customer_token):
+    headers = {"Authorization": f"Bearer {customer_token}"}
+    response = client.get("/me/balance", headers=headers)
+
+    assert response.status_code == 200
+    assert "balance" in response.json
+    assert isinstance(response.json["balance"], float)
+
+def test_vendor_get_balance(client, vendor_token):
+    headers = {"Authorization": f"Bearer {vendor_token}"}
+    response = client.get("/me/balance", headers=headers)
+
+    assert response.status_code == 200
+    assert "balance" in response.json
+    assert isinstance(response.json["balance"], float)
+
+def test_customer_patch_balance(client, customer_token):
+    headers = {"Authorization": f"Bearer {customer_token}"}
+    new_balance = 100000.0
+
+    response = client.patch("/me/balance", json={"balance": new_balance}, headers=headers)
+
+    assert response.status_code == 200
+    assert response.json["balance"] == new_balance
+
+def test_vendor_patch_balance(client, vendor_token):
+    headers = {"Authorization": f"Bearer {vendor_token}"}
+    new_balance = 50000.0
+
+    response = client.patch("/me/balance", json={"balance": new_balance}, headers=headers)
+
+    assert response.status_code == 200
+    assert response.json["balance"] == new_balance
+
+def test_patch_negative_balance(client, customer_token):
+    headers = {"Authorization": f"Bearer {customer_token}"}
+    response = client.patch("/me/balance", json={"balance": -1000}, headers=headers)
+
+    assert response.status_code == 400
+    assert response.json["msg"] == "Balance cannot be negative"
+
+
