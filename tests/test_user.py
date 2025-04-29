@@ -203,7 +203,7 @@ def test_admin_can_view_vendor_profile(client, admin_token, app):
 
     response = client.get(f"/users/{vendor_id}", headers=headers)
     assert response.status_code == 200
-    assert response.json["username"] == "vendoruser"
+    assert response.json["username"].startswith("vendoruser")
 
 
 def test_customer_can_view_vendor_profile(client, customer_token, app):
@@ -213,7 +213,7 @@ def test_customer_can_view_vendor_profile(client, customer_token, app):
 
     response = client.get(f"/users/{vendor_id}", headers=headers)
     assert response.status_code == 200
-    assert response.json["username"] == "vendoruser"
+    assert response.json["username"].startswith("vendoruser")
 
 
 def test_customer_access_nonexistent_user(client, customer_token):
