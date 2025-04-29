@@ -31,6 +31,7 @@ def create_app(config_module="Config.testing"):
 
     # 🛠️ ENABLE CORS HERE
     # CORS(app, origins=["https://bumibrew-pearl.vercel.app"], supports_credentials=True)
+    CORS(app)
 
     # Setup extensions
     JWTManager(app)
