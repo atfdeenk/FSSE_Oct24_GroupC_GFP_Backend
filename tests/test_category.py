@@ -3,15 +3,6 @@ from flask_jwt_extended import create_access_token
 from models.user import Users
 from instance.database import db
 
-
-from models.user import RoleType
-
-
-import json
-from flask_jwt_extended import create_access_token
-from models.user import Users
-from instance.database import db
-
 from models.user import RoleType
 
 
@@ -33,6 +24,32 @@ def test_create_category(client, vendor_token):
     ]  # 201 if created, 400 if vendor doesn't exist
     data = response.get_json()
     assert "msg" in data
+
+
+def test_create_category_rollback_on_error(client, vendor_token, monkeypatch):
+    """Test rollback behavior on category creation error."""
+    headers = {"Authorization": f"Bearer {vendor_token}"}
+
+    def raise_integrity_error(*args, **kwargs):
+        from sqlalchemy.exc import IntegrityError
+
+        raise IntegrityError("Simulated IntegrityError", None, None)
+
+    monkeypatch.setattr("repo.category_repo.create_category", raise_integrity_error)
+
+    response = client.post(
+        "/categories",
+        json={
+            "name": "Faulty Category",
+            "slug": "faulty-category",
+            "image_url": "http://example.com/faulty.jpg",
+        },
+        headers={**headers, "Content-Type": "application/json"},
+    )
+    assert response.status_code == 400
+    data = response.get_json()
+    assert "msg" in data
+    assert "IntegrityError" in data["msg"] or "Simulated IntegrityError" in data["msg"]
 
 
 def test_get_all_categories(client):
