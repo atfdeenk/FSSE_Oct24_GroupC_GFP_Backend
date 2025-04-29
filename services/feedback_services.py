@@ -31,6 +31,9 @@ def create_feedback(data, current_user_id):
     try:
         feedback = feedback_repo.create_feedback(data)
     except Exception as e:
+        from instance.database import db
+
+        db.session.rollback()
         print(f"Exception creating feedback: {e}, data: {data}")
         return None, "Failed to create feedback"
 

@@ -34,12 +34,10 @@ def get_all_products():
             category_id = category.id
         else:
             # If no matching category found, return empty list early
-            return jsonify({
-                "products": [],
-                "total": 0,
-                "page": page,
-                "limit": limit
-            }), 200
+            return (
+                jsonify({"products": [], "total": 0, "page": page, "limit": limit}),
+                200,
+            )
 
     products = get_all_serialized_products(
         search=search,

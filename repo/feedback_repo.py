@@ -5,7 +5,11 @@ from models.feedback import Feedbacks
 def create_feedback(data):
     feedback = Feedbacks(**data)
     db.session.add(feedback)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
     return feedback
 
 
@@ -28,5 +32,9 @@ def delete_feedback(feedback_id, user_id):
     if feedback.user_id != user_id:
         return None, "Unauthorized"
     db.session.delete(feedback)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
     return feedback, None

@@ -17,6 +17,9 @@ def create_category(data, current_user):
     except IntegrityError as e:
         return None, str(e)
     except Exception as e:
+        from instance.database import db
+
+        db.session.rollback()
         return None, str(e)
 
 
@@ -45,8 +48,14 @@ def update_category(category_id, data, current_user):
     if category.vendor_id != current_user_id and current_user_role != "admin":
         return None, "Unauthorized"
 
-    updated_category = category_repo.update_category(category, data)
-    return updated_category, None
+    try:
+        updated_category = category_repo.update_category(category, data)
+        return updated_category, None
+    except Exception as e:
+        from instance.database import db
+
+        db.session.rollback()
+        return None, str(e)
 
 
 def delete_category(category_id, current_user):
@@ -66,5 +75,11 @@ def delete_category(category_id, current_user):
     if category.vendor_id != current_user_id and current_user_role != "admin":
         return None, "Unauthorized"
 
-    category_repo.delete_category(category)
-    return category, None
+    try:
+        category_repo.delete_category(category)
+        return category, None
+    except Exception as e:
+        from instance.database import db
+
+        db.session.rollback()
+        return None, str(e)

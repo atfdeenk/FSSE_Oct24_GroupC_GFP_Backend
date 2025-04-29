@@ -4,6 +4,7 @@ from models.product import Products
 from decimal import Decimal
 from flask_jwt_extended import get_jwt
 from repo import product_repo
+from werkzeug.exceptions import HTTPException
 
 
 def serialize_product(product: Products) -> dict:
@@ -26,6 +27,7 @@ def serialize_product(product: Products) -> dict:
         "featured": product.featured,
         "flash_sale": product.flash_sale,
         "vendor_id": product.vendor_id,
+        "vendor_name": product.vendor.username if product.vendor else None,  # ✅ ADD THIS LINE
         "created_at": product.created_at.isoformat() if product.created_at else None,
         "updated_at": product.updated_at.isoformat() if product.updated_at else None,
         "categories": [
@@ -39,14 +41,8 @@ def serialize_product(product: Products) -> dict:
     }
 
 
-def get_all_serialized_products(
-    search=None,
-    category_id=None,
-    page=1,
-    limit=10,
-    sort_by="created_at",
-    sort_order="desc",
-):
+
+def get_all_serialized_products(search=None, category_id=None, page=1, limit=10, sort_by="created_at", sort_order="desc"):
     products, total = product_repo.get_all_products_filtered(
         search=search,
         category_id=category_id,
@@ -95,10 +91,7 @@ def create_product_with_serialization(data: dict):
         print(f"[PRICE ERROR] {e}")
         abort(400, "Invalid price format")
 
-    # 🛑 REMOVE location if someone sends it by mistake
     data.pop("location", None)
-
-    # ✅ Fill only real optional fields
     data.setdefault("image_url", "http://example.com/image.jpg")
     data.setdefault("featured", False)
     data.setdefault("flash_sale", False)
@@ -109,8 +102,10 @@ def create_product_with_serialization(data: dict):
         product = product_repo.create_product(data)
         if not product:
             print("[DEBUG] product_repo.create_product returned None")
-            abort(422, "Product creation failed (repo returned None)")
+            abort(409, "Duplicate slug. Product already exists.")
         return serialize_product(product)
+    except HTTPException as e:
+        raise e  # ✅ Let Flask handle HTTP errors like abort(409)
     except Exception as e:
         print("[CRITICAL ERROR DURING PRODUCT CREATION]")
         print(e)

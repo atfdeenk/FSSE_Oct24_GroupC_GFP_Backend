@@ -8,14 +8,19 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import joinedload
 from sqlalchemy import asc, desc, cast, Numeric, or_
 
+
 def get_all_products():
     return Products.query.all()
 
+
 def get_product_by_id(product_id):
-    return Products.query.get(product_id)
+    # return Products.query.get(product_id)
+    return db.session.get(Products, product_id)
+
 
 def get_paginated_products(page: int, limit: int):
     return Products.query.paginate(page=page, per_page=limit, error_out=False)
+
 
 def create_product(data):
     try:
@@ -23,7 +28,7 @@ def create_product(data):
         category_ids = data.pop("category_ids", [])  # Extract category_ids
         product = Products(**data)
         db.session.add(product)
-        db.session.flush()  # Get product.id before commit
+        db.session.flush()  # Assign product.id before commit
 
         # Create product-category mappings
         for cid in category_ids:
@@ -32,11 +37,14 @@ def create_product(data):
         db.session.commit()
         print("[DEBUG] product created:", product)
         return product
+    except IntegrityError as e:
+        db.session.rollback()
+        print("[DB ERROR] Duplicate constraint triggered:", e)
+        return None  # ✅ Return None for controlled failure
     except Exception as e:
         db.session.rollback()
-        print("[DB ERROR]", e)
+        print("[CRITICAL ERROR DURING PRODUCT CREATION]", e)
         raise e
-
 
 
 def update_product(product_id, data):
@@ -47,11 +55,17 @@ def update_product(product_id, data):
     for key, value in data.items():
         if hasattr(product, key):
             setattr(product, key, value)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        raise e
     return product
 
+
 def delete_product(product_id):
-    product = Products.query.get(product_id)
+    # product = Products.query.get(product_id)
+    product = db.session.get(Products, product_id)
     if not product:
         return None
 
@@ -60,13 +74,25 @@ def delete_product(product_id):
 
     CartItems.query.filter_by(product_id=product_id).delete()
     db.session.delete(product)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        raise e
     return product
 
 
 from sqlalchemy.orm import aliased
 
-def get_all_products_filtered(search=None, category_id=None, page=1, limit=10, sort_by="created_at", sort_order="desc"):
+
+def get_all_products_filtered(
+    search=None,
+    category_id=None,
+    page=1,
+    limit=10,
+    sort_by="created_at",
+    sort_order="desc",
+):
     query = Products.query.filter(Products.is_approved == True)
 
     if search:
@@ -76,12 +102,16 @@ def get_all_products_filtered(search=None, category_id=None, page=1, limit=10, s
         query = query.filter(
             or_(
                 Products.name.ilike(f"%{search}%"),
-                Users.city.ilike(f"%{search}%"),  # ✅ search on Users.city not Products.location
+                Users.city.ilike(
+                    f"%{search}%"
+                ),  # ✅ search on Users.city not Products.location
             )
         )
 
     if category_id:
-        query = query.join(ProductCategories).filter(ProductCategories.category_id == category_id)
+        query = query.join(ProductCategories).filter(
+            ProductCategories.category_id == category_id
+        )
 
     # Sorting logic
     if sort_by == "price":
@@ -104,10 +134,15 @@ def get_all_products_filtered(search=None, category_id=None, page=1, limit=10, s
 
     return products, total
 
+
 def approve_product(product_id: int) -> Products:
     product = db.session.get(Products, product_id)
     if not product:
         return None
     product.is_approved = True
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        raise e
     return product
