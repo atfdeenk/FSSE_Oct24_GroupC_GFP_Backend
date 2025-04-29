@@ -105,6 +105,8 @@ def update_order_status(order_id):
 
     order, error = order_services.update_order_status(order_id, status)
     if error:
+        if error == "Order not found.":
+            return jsonify({"msg": error}), 404
         return jsonify({"msg": error}), 400
 
     return jsonify({"msg": "Order status updated"}), 200

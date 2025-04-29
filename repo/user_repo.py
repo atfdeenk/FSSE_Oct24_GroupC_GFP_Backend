@@ -1,6 +1,8 @@
 from instance.database import db
 from models.user import Users
 from sqlalchemy import select
+from models.user import RoleType
+from decimal import Decimal
 
 def create_user(data):
     user = Users(**data)
@@ -31,3 +33,20 @@ def get_all_users():
 def delete_user(user):
     db.session.delete(user)
     db.session.commit()
+
+def get_users_by_role(role_value: str):
+    stmt = select(Users).where(Users.role == RoleType(role_value))
+    return db.session.execute(stmt).scalars().all()
+
+def get_users_exclude_role(role_value: str):
+    stmt = select(Users).where(Users.role != RoleType(role_value))
+    return db.session.execute(stmt).scalars().all()
+
+def update_user_balance(user_id: int, new_balance: Decimal) -> Users:
+    user = db.session.get(Users, user_id)
+    if not user:
+        return None
+    user.balance = new_balance
+    db.session.commit()
+    return user
+

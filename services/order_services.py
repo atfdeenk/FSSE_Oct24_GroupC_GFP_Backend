@@ -19,7 +19,7 @@ def create_order_with_items(user_id, items):
     total_amount = sum(item["quantity"] * item["unit_price"] for item in items)
 
     try:
-        with db.session.begin():  # 🚀 Start transaction
+        with db.session.begin_nested():  # 🚀 Start nested transaction
             order_data = {
                 "user_id": user_id,
                 "total_amount": total_amount,
@@ -80,8 +80,8 @@ def update_order_status(order_id, new_status):
                 f"Invalid status '{new_status}'. Allowed statuses are {list(ALLOWED_STATUS_TRANSITIONS.keys())}.",
             )
 
-        with db.session.begin():
-            order = Orders.query.get(order_id)
+        with db.session.begin_nested():
+            order = db.session.get(Orders, order_id)
             if not order:
                 return None, "Order not found."
 

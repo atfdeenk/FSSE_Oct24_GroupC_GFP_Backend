@@ -96,3 +96,28 @@ def test_delete_product_images(client, app, seed_product, vendor_token):
         )
         assert response.status_code == 200
         assert response.get_json()["message"] == "Images deleted"
+
+def test_get_images_when_none_exist(client, seed_product):
+    response = client.get("/products/1/images")
+    assert response.status_code == 404
+    assert response.get_json()["message"] == "No images found"
+
+def test_update_images_when_none_exist(client, vendor_token, seed_product):
+    response = client.put(
+        "/products/1/images",
+        json={"image1_url": "https://updated.com/nowhere.jpg"},
+        headers={"Authorization": f"Bearer {vendor_token}"}
+    )
+    assert response.status_code == 404
+    assert response.get_json()["message"] == "Images not found"
+
+def test_delete_images_when_none_exist(client, vendor_token, seed_product):
+    response = client.delete(
+        "/products/1/images",
+        headers={"Authorization": f"Bearer {vendor_token}"}
+    )
+    assert response.status_code == 404
+    assert response.get_json()["message"] == "Images not found"
+
+
+

@@ -2,6 +2,7 @@
 
 import os
 from flask import Flask, send_from_directory, current_app
+from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 import models  # noqa: F401
@@ -29,8 +30,11 @@ def create_app(config_module="Config.testing"):
     )
     app.config.from_object(config_module)
 
-    # Setup extensions
+    # 🛠️ ENABLE CORS HERE
+    # CORS(app, origins=["https://bumibrew-pearl.vercel.app"], supports_credentials=True)
     CORS(app)
+
+    # Setup extensions
     JWTManager(app)
     init_db(app)
 

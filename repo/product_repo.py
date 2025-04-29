@@ -12,7 +12,8 @@ def get_all_products():
     return Products.query.all()
 
 def get_product_by_id(product_id):
-    return Products.query.get(product_id)
+    # return Products.query.get(product_id)
+    return db.session.get(Products, product_id)
 
 def get_paginated_products(page: int, limit: int):
     return Products.query.paginate(page=page, per_page=limit, error_out=False)
@@ -23,7 +24,7 @@ def create_product(data):
         category_ids = data.pop("category_ids", [])  # Extract category_ids
         product = Products(**data)
         db.session.add(product)
-        db.session.flush()  # Get product.id before commit
+        db.session.flush()  # Assign product.id before commit
 
         # Create product-category mappings
         for cid in category_ids:
@@ -32,9 +33,13 @@ def create_product(data):
         db.session.commit()
         print("[DEBUG] product created:", product)
         return product
+    except IntegrityError as e:
+        db.session.rollback()
+        print("[DB ERROR] Duplicate constraint triggered:", e)
+        return None  # ✅ Return None for controlled failure
     except Exception as e:
         db.session.rollback()
-        print("[DB ERROR]", e)
+        print("[CRITICAL ERROR DURING PRODUCT CREATION]", e)
         raise e
 
 
@@ -51,7 +56,8 @@ def update_product(product_id, data):
     return product
 
 def delete_product(product_id):
-    product = Products.query.get(product_id)
+    # product = Products.query.get(product_id)
+    product = db.session.get(Products, product_id)
     if not product:
         return None
 

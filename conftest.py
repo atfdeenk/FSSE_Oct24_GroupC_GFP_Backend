@@ -1,4 +1,6 @@
 import pytest
+import random
+import string
 from config.settings import create_app
 from instance.database import db
 from flask_jwt_extended import create_access_token
@@ -8,12 +10,17 @@ from models.product_category import ProductCategories
 from models.category import Categories
 
 
+def random_string(length=6):
+    """Generate a random string for unique test data."""
+    return "".join(random.choices(string.ascii_lowercase + string.digits, k=length))
+
+
 @pytest.fixture(scope="function")
 def app():
     """Create a Flask application instance for testing."""
     app = create_app("config.testing")
 
-    # ✅ Import all models to ensure SQLAlchemy relationships are resolvable
+    # Import all models to ensure SQLAlchemy relationships are resolvable
     import models.product
     import models.product_category
     import models.user
@@ -35,13 +42,16 @@ def init_db(app):
     with app.app_context():
         db.create_all()
 
-        # ✅ Seed test vendor user
+        # Generate random suffix to prevent UNIQUE constraint violations
+        suffix = random_string()
+
+        # Seed vendor user
         vendor = Users(
-            username="vendoruser",
+            username=f"vendoruser_{suffix}",
             first_name="Test",
             last_name="Vendor",
-            email="vendor@mail.com",
-            phone="081234567890",
+            email=f"vendor_{suffix}@mail.com",
+            phone=f"08123{random.randint(10000, 99999)}",
             password_hash="test",
             date_of_birth="1990-01-01",
             address="Test Street 123",
@@ -55,12 +65,14 @@ def init_db(app):
             bank_name="BNI",
             is_active=True,
         )
+
+        # Seed customer user
         customer = Users(
-            username="customeruser",
+            username=f"customeruser_{suffix}",
             first_name="Test",
             last_name="Customer",
-            email="customer@mail.com",
-            phone="089876543210",
+            email=f"customer_{suffix}@mail.com",
+            phone=f"08987{random.randint(10000, 99999)}",
             password_hash="test",
             date_of_birth="1992-05-05",
             address="Another Street 456",
@@ -74,12 +86,14 @@ def init_db(app):
             bank_name="BCA",
             is_active=True,
         )
+
+        # Seed admin user
         admin = Users(
-            username="adminuser",
+            username=f"adminuser_{suffix}",
             first_name="Admin",
             last_name="User",
-            email="admin@mail.com",
-            phone="087654321098",
+            email=f"admin_{suffix}@mail.com",
+            phone=f"08765{random.randint(10000, 99999)}",
             password_hash="test",
             date_of_birth="1985-09-09",
             address="Admin Street 789",
@@ -103,8 +117,8 @@ def init_db(app):
         app.test_admin_id = admin.id
 
         category = Categories(
-            name="Test Category",
-            slug="test-category",
+            name=f"Test Category {suffix}",
+            slug=f"test-category-{suffix}",
             vendor_id=vendor.id,
         )
         db.session.add(category)
@@ -126,7 +140,7 @@ def client(app, init_db):
 def vendor_token(app):
     with app.app_context():
         return create_access_token(
-            identity=str(1), additional_claims={"role": "vendor"}
+            identity=str(app.test_vendor_id), additional_claims={"role": "vendor"}
         )
 
 
@@ -134,14 +148,16 @@ def vendor_token(app):
 def customer_token(app):
     with app.app_context():
         return create_access_token(
-            identity=str(2), additional_claims={"role": "customer"}
+            identity=str(app.test_customer_id), additional_claims={"role": "customer"}
         )
 
 
 @pytest.fixture
 def admin_token(app):
     with app.app_context():
-        return create_access_token(identity=str(3), additional_claims={"role": "admin"})
+        return create_access_token(
+            identity=str(app.test_admin_id), additional_claims={"role": "admin"}
+        )
 
 
 @pytest.fixture
@@ -157,15 +173,14 @@ def seed_product(app):
             stock_quantity=10,
             unit_quantity="250g",
             image_url="http://example.com/test.jpg",
-            # location="Test City",
             featured=False,
             flash_sale=False,
-            vendor_id=1,
+            vendor_id=app.test_vendor_id,
+            is_approved=True,
         )
         db.session.add(product)
 
-        # Assign the category (created in init_db)
-        pc = ProductCategories(product_id=1, category_id=1)
+        pc = ProductCategories(product_id=1, category_id=app.test_category_id)
         db.session.add(pc)
 
         db.session.commit()
@@ -175,46 +190,26 @@ def seed_product(app):
 @pytest.fixture
 def new_user(app):
     with app.app_context():
+        suffix = "newuser"
         user = Users(
-            username="newuser",
-            first_name="New",
+            username=f"testuser_{suffix}",
+            first_name="Test",
             last_name="User",
-            email="newuser@mail.com",
-            phone="081122334455",
-            password_hash="newpassword",
-            date_of_birth="1995-01-01",
-            address="New Street 123",
-            city="New City",
-            state="New State",
-            country="New Country",
-            zip_code="11111",
-            image_url="https://example.com/newuser.png",
+            email=f"testuser_{suffix}@mail.com",
+            phone="08123456789",
+            password_hash="test",
+            date_of_birth="1990-01-01",
+            address="Test Address",
+            city="Test City",
+            state="Test State",
+            country="Test Country",
+            zip_code="12345",
+            image_url="https://example.com/user.png",
             role="customer",
-            bank_account="111222333",
-            bank_name="New Bank",
+            bank_account="1234567890",
+            bank_name="Test Bank",
             is_active=True,
         )
         db.session.add(user)
         db.session.commit()
         yield user
-
-
-@pytest.fixture
-def new_product(app):
-    with app.app_context():
-        product = Products(
-            name="New Product",
-            slug="new-product",
-            description="New product description",
-            currency="IDR",
-            price=90000,
-            stock_quantity=20,
-            unit_quantity="500g",
-            image_url="http://example.com/newproduct.jpg",
-            featured=False,
-            flash_sale=False,
-            vendor_id=1,
-        )
-        db.session.add(product)
-        db.session.commit()
-        yield product
