@@ -11,16 +11,11 @@ order_bp = Blueprint("order_bp", __name__)
 def create_order():
     data = request.get_json()
     items = data.get("items", [])
-    vendor_id = data.get("vendor_id")
     current_user = get_jwt_identity()
 
     if not items:
         return jsonify({"msg": "No items to order"}), 400
 
-    if not vendor_id:
-        return jsonify({"msg": "Vendor ID is required"}), 400
-
-    # Validate each item has required keys
     required_keys = {"product_id", "quantity", "unit_price"}
     for idx, item in enumerate(items):
         if not all(key in item for key in required_keys):
@@ -110,7 +105,9 @@ def update_order_status(order_id):
 
     order, error = order_services.update_order_status(order_id, status)
     if error:
-        return jsonify({"msg": error}), 404
+        if error == "Order not found.":
+            return jsonify({"msg": error}), 404
+        return jsonify({"msg": error}), 400
 
     return jsonify({"msg": "Order status updated"}), 200
 
