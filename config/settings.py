@@ -2,8 +2,8 @@
 
 import os
 from flask import Flask, send_from_directory, current_app
-from flask_cors import CORS
 from flask_jwt_extended import JWTManager
+from flask_cors import CORS
 import models  # noqa: F401
 from instance.database import init_db
 
@@ -20,14 +20,14 @@ from route.order_route import order_bp
 from route.wishlist_route import wishlist_bp
 
 
-def create_app(config_module=None):
+def create_app(config_module="Config.testing"):
     app = Flask(__name__)
 
     # Determine configuration
     config_path = config_module or os.getenv(
         "CONFIG_MODULE", "config.config.LocalConfig"
     )
-    app.config.from_object(config_path)
+    app.config.from_object(config_module)
 
     # Setup extensions
     CORS(app)

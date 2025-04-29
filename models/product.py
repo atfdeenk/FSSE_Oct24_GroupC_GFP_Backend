@@ -24,6 +24,7 @@ class Products(db.Model):
     image_url: str = db.Column(db.String(255), nullable=True)
     featured: bool = db.Column(db.Boolean, default=False)
     flash_sale: bool = db.Column(db.Boolean, default=False)
+    is_approved: bool = db.Column(db.Boolean, default=False)
 
     vendor_id: int = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     vendor = db.relationship(
