@@ -140,3 +140,162 @@ def test_create_product_missing_fields(client, vendor_token):
     }
     res = client.post("/products", json=payload, headers=headers)
     assert res.status_code == 400 or res.status_code == 422
+
+def test_get_single_product(client, app, vendor_token):
+    headers = {
+        "Authorization": f"Bearer {vendor_token}",
+        "Content-Type": "application/json"
+    }
+
+    # Step 1: Create the product
+    create_payload = {
+        "name": "Single Product",
+        "slug": "single-product",
+        "description": "For single fetch",
+        "currency": "IDR",
+        "price": "25000.00",
+        "stock_quantity": 5,
+        "unit_quantity": "box",
+        "image_url": "http://example.com/single.jpg"
+    }
+
+    create_res = client.post("/products", json=create_payload, headers=headers)
+    assert create_res.status_code == 201
+
+    product_id = create_res.get_json()["id"]
+
+    # Step 2: Approve the product manually in the DB
+    with app.app_context():
+        product = db.session.get(Products, product_id)
+        product.is_approved = True
+        db.session.commit()
+
+    # Step 3: Fetch the product by ID (public access)
+    get_res = client.get(f"/products/{product_id}")
+    assert get_res.status_code == 200
+    data = get_res.get_json()
+    assert data["id"] == product_id
+    assert data["name"] == "Single Product"
+
+
+
+def test_update_product_unauthorized(client, customer_token):
+    headers = {"Authorization": f"Bearer {customer_token}"}
+    update_payload = {"description": "Should be denied"}
+    res = client.put("/products/1", json=update_payload, headers=headers)
+    assert res.status_code in [401, 403]
+
+
+def test_vendor_can_delete_own_product(client, vendor_token):
+    headers = {
+        "Authorization": f"Bearer {vendor_token}",
+        "Content-Type": "application/json"
+    }
+
+    # Create a product under the vendor
+    create_payload = {
+        "name": "Vendor Deletable Product",
+        "slug": "vendor-deletable",
+        "description": "Owned by vendor",
+        "currency": "IDR",
+        "price": "15000.00",
+        "stock_quantity": 5,
+        "unit_quantity": "pcs",
+        "image_url": "http://example.com/vendor-delete.jpg"
+    }
+    res = client.post("/products", json=create_payload, headers=headers)
+    assert res.status_code == 201
+    product_id = res.get_json()["id"]
+
+    # Delete as the same vendor
+    delete_res = client.delete(f"/products/{product_id}", headers=headers)
+    assert delete_res.status_code == 200
+    assert "message" in delete_res.get_json()
+
+
+def test_admin_can_delete_product(client, admin_token, vendor_token):
+    headers_vendor = {
+        "Authorization": f"Bearer {vendor_token}",
+        "Content-Type": "application/json"
+    }
+
+    # Vendor creates product
+    create_payload = {
+        "name": "Admin Deletable Product",
+        "slug": "admin-deletable",
+        "description": "Will be deleted by admin",
+        "currency": "IDR",
+        "price": "20000.00",
+        "stock_quantity": 10,
+        "unit_quantity": "pcs",
+        "image_url": "http://example.com/admin-delete.jpg"
+    }
+    res = client.post("/products", json=create_payload, headers=headers_vendor)
+    assert res.status_code == 201
+    product_id = res.get_json()["id"]
+
+    # Admin deletes it
+    headers_admin = {"Authorization": f"Bearer {admin_token}"}
+    delete_res = client.delete(f"/products/{product_id}", headers=headers_admin)
+    assert delete_res.status_code == 200
+    assert "message" in delete_res.get_json()
+
+
+
+def test_get_product_invalid_id(client):
+    res = client.get("/products/99999")
+    assert res.status_code == 404
+
+
+def test_update_nonexistent_product(client, vendor_token):
+    headers = {
+        "Authorization": f"Bearer {vendor_token}",
+        "Content-Type": "application/json"
+    }
+    payload = {"name": "Should not update"}
+    res = client.put("/products/999999", json=payload, headers=headers)
+    assert res.status_code == 404
+
+def test_delete_nonexistent_product(client, vendor_token):
+    headers = {"Authorization": f"Bearer {vendor_token}"}
+    res = client.delete("/products/999999", headers=headers)
+    assert res.status_code == 404
+
+
+def test_create_product_duplicate_slug(client, vendor_token):
+    headers = {
+        "Authorization": f"Bearer {vendor_token}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "name": "Duplicate Slug",
+        "slug": "duplicate-slug",
+        "description": "First one",
+        "currency": "IDR",
+        "price": "20000.00",
+        "stock_quantity": 5,
+        "unit_quantity": "pcs",
+        "image_url": "http://example.com/dup.jpg"
+    }
+    client.post("/products", json=payload, headers=headers)
+    res = client.post("/products", json=payload, headers=headers)
+    assert res.status_code in [400, 409]
+
+def test_create_product_invalid_price_format(client, vendor_token):
+    headers = {
+        "Authorization": f"Bearer {vendor_token}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "name": "Bad Price Product",
+        "slug": "bad-price-product",
+        "description": "Invalid price field",
+        "currency": "IDR",
+        "price": "not-a-number",  # ⚡ BAD price
+        "stock_quantity": 5,
+        "unit_quantity": "pcs",
+        "image_url": "http://example.com/bad.jpg"
+    }
+    res = client.post("/products", json=payload, headers=headers)
+    assert res.status_code == 400
+

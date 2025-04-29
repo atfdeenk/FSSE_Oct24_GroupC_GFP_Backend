@@ -136,3 +136,43 @@ def get_me_service():
         ),
         200,
     )  # Ensure it always returns a tuple with status code
+
+
+def get_all_non_admin_users():
+    return user_repo.get_users_exclude_role("admin")
+
+def get_admin_users():
+    return user_repo.get_users_by_role("admin")
+
+def get_user_by_id_with_admin_check(target_user_id, current_user_role):
+    user = user_repo.get_user_by_id(target_user_id)
+    if not user:
+        return None, "User not found"
+
+    if user.role.value == "admin" and current_user_role != "admin":
+        return None, "Unauthorized to view admin accounts"
+
+    return user, None
+
+
+
+def get_user_balance_service(user_id: int, current_user_id: int, current_user_role: str):
+    user = user_repo.get_user_by_id(user_id)
+    if not user:
+        return None, "User not found"
+
+    if current_user_id != user.id and current_user_role != "admin":
+        return None, "Unauthorized"
+
+    return user.balance or 0.0, None
+
+def update_my_balance_service(user_id: int, new_balance: float):
+    user = user_repo.get_user_by_id(user_id)
+
+    if not user:
+        return None, "User not found"
+
+    from decimal import Decimal
+    updated_user = user_repo.update_user_balance(user_id, Decimal(str(new_balance)))
+    return updated_user, None
+
