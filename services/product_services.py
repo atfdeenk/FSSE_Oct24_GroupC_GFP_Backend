@@ -13,7 +13,11 @@ def serialize_product(product: Products) -> dict:
         "slug": product.slug,
         "description": product.description,
         "currency": product.currency,
-        "price": float(product.price) if isinstance(product.price, Decimal) else product.price,
+        "price": (
+            float(product.price)
+            if isinstance(product.price, Decimal)
+            else product.price
+        ),
         "discount_percentage": product.discount_percentage,
         "stock_quantity": product.stock_quantity,
         "unit_quantity": product.unit_quantity,
@@ -35,20 +39,27 @@ def serialize_product(product: Products) -> dict:
     }
 
 
-def get_all_serialized_products(search=None, category_id=None, page=1, limit=10, sort_by="created_at", sort_order="desc"):
+def get_all_serialized_products(
+    search=None,
+    category_id=None,
+    page=1,
+    limit=10,
+    sort_by="created_at",
+    sort_order="desc",
+):
     products, total = product_repo.get_all_products_filtered(
         search=search,
         category_id=category_id,
         page=page,
         limit=limit,
         sort_by=sort_by,
-        sort_order=sort_order
+        sort_order=sort_order,
     )
     return {
         "products": [serialize_product(p) for p in products],
         "total": total,
         "page": page,
-        "limit": limit
+        "limit": limit,
     }
 
 
@@ -63,14 +74,13 @@ def get_paginated_serialized_products(page: int, limit: int):
         "limit": paginated.per_page,
     }
 
+
 def get_serialized_product_by_id(product_id: int):
     product = product_repo.get_product_by_id(product_id)
-    if not product:
+    if not product or not product.is_approved:
         return None
     return serialize_product(product)
 
-
-from flask import current_app
 
 def create_product_with_serialization(data: dict):
     claims = get_jwt()
@@ -107,8 +117,6 @@ def create_product_with_serialization(data: dict):
         abort(500, f"Server Error: {str(e)}")
 
 
-
-
 def update_product_with_serialization(product_id: int, data: dict):
     product = product_repo.update_product(product_id, data)
     if not product:
@@ -122,10 +130,9 @@ def delete_product_and_return_message(product_id: int):
         return None
     return {"message": "Product deleted"}
 
+
 def approve_product_by_id(product_id: int):
     product = product_repo.approve_product(product_id)
     if not product:
         raise ValueError("Product not found")
     return serialize_product(product)
-
-
