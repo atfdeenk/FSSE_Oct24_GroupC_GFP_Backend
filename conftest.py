@@ -176,6 +176,7 @@ def seed_product(app):
             featured=False,
             flash_sale=False,
             vendor_id=app.test_vendor_id,
+            is_approved=True,
         )
         db.session.add(product)
 
