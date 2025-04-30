@@ -8,11 +8,6 @@ from decimal import Decimal
 def create_user(data):
     user = Users(**data)
     db.session.add(user)
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
     return user
 
 
@@ -30,11 +25,6 @@ def update_user(user, data):
     for key, value in data.items():
         if hasattr(user, key):
             setattr(user, key, value)
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
     return user
 
 
@@ -46,11 +36,6 @@ def get_all_users():
 
 def delete_user(user):
     db.session.delete(user)
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
 
 
 def get_users_by_role(role_value: str):
@@ -68,5 +53,4 @@ def update_user_balance(user_id: int, new_balance: Decimal) -> Users:
     if not user:
         return None
     user.balance = new_balance
-    db.session.commit()
     return user

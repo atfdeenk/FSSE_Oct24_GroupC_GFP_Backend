@@ -137,4 +137,9 @@ def delete_order(order_id):
         return None, "Order not found"
 
     order_repo.delete_order(order)
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
     return order, None

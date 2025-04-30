@@ -1,5 +1,6 @@
 from repo import feedback_repo
 from models.user import Users  # Needed for email to user lookup
+from instance.database import db
 
 
 def create_feedback(data, current_user_id):
@@ -30,9 +31,8 @@ def create_feedback(data, current_user_id):
 
     try:
         feedback = feedback_repo.create_feedback(data)
+        db.session.commit()
     except Exception as e:
-        from instance.database import db
-
         db.session.rollback()
         print(f"Exception creating feedback: {e}, data: {data}")
         return None, "Failed to create feedback"
@@ -57,4 +57,12 @@ def delete_feedback(feedback_id, current_user_id):
     user = Users.query.filter_by(id=current_user_id).first()
     if not user:
         return None, "User not found"
-    return feedback_repo.delete_feedback(feedback_id, user.id)
+    feedback, error = feedback_repo.delete_feedback(feedback_id, user.id)
+    if error:
+        return None, error
+    try:
+        db.session.commit()
+        return feedback, None
+    except Exception:
+        db.session.rollback()
+        return None, "Failed to delete feedback"
