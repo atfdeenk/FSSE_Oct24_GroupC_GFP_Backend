@@ -248,7 +248,7 @@ def get_admin_users():
     )
 
 
-@auth_bp.route("/me/balance", methods=["GET"])
+@auth_bp.route("/users/me/balance", methods=["GET"])
 @jwt_required()
 @role_required("customer", "vendor")
 def get_my_balance():
@@ -261,7 +261,7 @@ def get_my_balance():
     return jsonify({"balance": float(user.balance or 0.0)}), 200
 
 
-@auth_bp.route("/me/balance", methods=["PATCH"])
+@auth_bp.route("/users/me/balance", methods=["PATCH"])
 @jwt_required()
 @role_required("customer", "vendor")
 def update_my_balance():
