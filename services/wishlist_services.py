@@ -1,6 +1,8 @@
 from repo import wishlist_repo
 from models.wishlist_item import WishlistItems
 from instance.database import db
+from sqlalchemy.exc import SQLAlchemyError
+import logging
 
 
 def get_user_wishlist(user_id: int):
@@ -22,15 +24,30 @@ def add_to_wishlist(user_id: int, product_id: int, vendor_id: int):
     db.session.add(item)
     try:
         db.session.commit()
-    except Exception:
+    except SQLAlchemyError as e:
         db.session.rollback()
+        logging.error(f"Error committing add_to_wishlist: {e}")
         raise
     return item
 
 
 def remove_from_wishlist(user_id: int, product_id: int):
-    return wishlist_repo.remove_from_wishlist(user_id, product_id)
+    try:
+        result = wishlist_repo.remove_from_wishlist(user_id, product_id)
+        db.session.commit()
+        return result
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logging.error(f"Error committing remove_from_wishlist: {e}")
+        raise
 
 
 def clear_wishlist(user_id: int):
-    return wishlist_repo.clear_wishlist(user_id)
+    try:
+        result = wishlist_repo.clear_wishlist(user_id)
+        db.session.commit()
+        return result
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        logging.error(f"Error committing clear_wishlist: {e}")
+        raise

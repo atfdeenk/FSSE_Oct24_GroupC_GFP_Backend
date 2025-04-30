@@ -24,21 +24,13 @@ def get_orders_by_user(user_id):
 
 
 def update_order(order):
-    try:
-        db.session.commit()
-        return order
-    except Exception:
-        db.session.rollback()
-        raise
+    # Removed commit/rollback to delegate transaction management to service layer
+    return order
 
 
 def delete_order(order):
-    try:
-        db.session.delete(order)
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
+    # Removed commit/rollback to delegate transaction management to service layer
+    db.session.delete(order)
 
 
 # Order Items Repo
@@ -49,6 +41,7 @@ def create_order_item(item_data):
         return item
     except Exception:
         db.session.rollback()
+        raise
 
 
 def get_order_items_by_order_id(order_id):

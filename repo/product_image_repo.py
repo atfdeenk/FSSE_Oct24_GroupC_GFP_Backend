@@ -7,11 +7,6 @@ def create_product_images(product_id, image1=None, image2=None, image3=None):
         product_id=product_id, image1_url=image1, image2_url=image2, image3_url=image3
     )
     db.session.add(image_entry)
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
     return image_entry
 
 
@@ -33,11 +28,6 @@ def save_uploaded_filename(product_id, filename):
         # All 3 slots are full, you can raise error or overwrite first one if you want
         images.image1_url = filename
 
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
     return images
 
 
@@ -52,11 +42,6 @@ def update_product_images(product_id, data):
     for field in ["image1_url", "image2_url", "image3_url"]:
         if field in data:
             setattr(images, field, data[field])
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
     return images
 
 
@@ -65,9 +50,4 @@ def delete_product_images(product_id):
     if not images:
         return False
     db.session.delete(images)
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
     return True
