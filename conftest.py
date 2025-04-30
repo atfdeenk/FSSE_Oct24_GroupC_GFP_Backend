@@ -18,7 +18,7 @@ def random_string(length=6):
 @pytest.fixture(scope="function")
 def app():
     """Create a Flask application instance for testing."""
-    app = create_app("config.testing")
+    app = create_app("config.config.TestingConfig")
 
     # Import all models to ensure SQLAlchemy relationships are resolvable
     import models.product
