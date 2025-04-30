@@ -28,7 +28,7 @@ def create_app(config_module="Config.testing"):
     config_path = config_module or os.getenv(
         "CONFIG_MODULE", "config.config.LocalConfig"
     )
-    app.config.from_object(config_module)
+    app.config.from_object(config_path)
 
     # 🛠️ ENABLE CORS HERE
     # CORS(app, origins=["https://bumibrew-pearl.vercel.app"], supports_credentials=True)
