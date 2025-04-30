@@ -6,7 +6,7 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 import models  # noqa: F401
-from instance.database import init_db
+from instance.database import init_db, db
 
 # Import blueprints
 from route.index import index_router
@@ -28,7 +28,7 @@ def create_app(config_module="Config.testing"):
     config_path = config_module or os.getenv(
         "CONFIG_MODULE", "config.config.LocalConfig"
     )
-    app.config.from_object(config_module)
+    app.config.from_object(config_path)
 
     # 🛠️ ENABLE CORS HERE
     # CORS(app, origins=["https://bumibrew-pearl.vercel.app"], supports_credentials=True)
@@ -41,9 +41,11 @@ def create_app(config_module="Config.testing"):
     # Teardown after each request
     @app.teardown_appcontext
     def shutdown_session(exception=None):
-        from instance.database import db
-
-        db.session.remove()
+        try:
+            db.session.remove()
+        except Exception as e:
+            # Log the error if needed (avoid print in production)
+            current_app.logger.warning(f"Failed to remove DB session: {e}")
 
     # Register blueprints
     app.register_blueprint(index_router)
