@@ -19,8 +19,12 @@ uv add taskipy              # for task automation
 
 uv add flask-cors           # for frontend-backend integration
 uv add marshmallow-sqlalchemy # for data validation
+uv export > requirements.txt  # export to requirements.txt
 
 ```
+
+gunicorn==21.2.0 \
+ --hash=sha256:3213aa5e8c24949e792bcacfc176fef362e7aac80b76c56f6b5122bf350722f0
 
 ```toml
     [tool.taskipy.tasks]
