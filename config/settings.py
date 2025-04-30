@@ -1,5 +1,4 @@
 # config/settings.py
-from dotenv import load_dotenv
 import os
 from flask import Flask, send_from_directory, current_app
 from flask_jwt_extended import JWTManager
@@ -22,7 +21,6 @@ from route.wishlist_route import wishlist_bp
 
 def create_app(config_module=None):
 
-    load_dotenv()
     app = Flask(__name__)
 
     # Determine configuration
