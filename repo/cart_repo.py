@@ -9,9 +9,5 @@ def get_cart_by_user(user_id):
 def create_cart_for_user(user_id):
     cart = Cart(user_id=user_id)
     db.session.add(cart)
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
+    db.session.flush()  # Assign id before returning
     return cart

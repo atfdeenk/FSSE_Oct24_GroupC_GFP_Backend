@@ -1,10 +1,11 @@
 from flask import current_app, abort
-from repo import product_repo
-from models.product import Products
-from decimal import Decimal
 from flask_jwt_extended import get_jwt
+from models.product import Products
+from instance.database import db
 from repo import product_repo
+from decimal import Decimal
 from werkzeug.exceptions import HTTPException
+from sqlalchemy.exc import IntegrityError
 
 
 def serialize_product(product: Products) -> dict:
@@ -27,7 +28,9 @@ def serialize_product(product: Products) -> dict:
         "featured": product.featured,
         "flash_sale": product.flash_sale,
         "vendor_id": product.vendor_id,
-        "vendor_name": product.vendor.username if product.vendor else None,  # ✅ ADD THIS LINE
+        "vendor_name": (
+            product.vendor.username if product.vendor else None
+        ),  # ✅ ADD THIS LINE
         "created_at": product.created_at.isoformat() if product.created_at else None,
         "updated_at": product.updated_at.isoformat() if product.updated_at else None,
         "categories": [
@@ -41,8 +44,14 @@ def serialize_product(product: Products) -> dict:
     }
 
 
-
-def get_all_serialized_products(search=None, category_id=None, page=1, limit=10, sort_by="created_at", sort_order="desc"):
+def get_all_serialized_products(
+    search=None,
+    category_id=None,
+    page=1,
+    limit=10,
+    sort_by="created_at",
+    sort_order="desc",
+):
     products, total = product_repo.get_all_products_filtered(
         search=search,
         category_id=category_id,
@@ -103,10 +112,17 @@ def create_product_with_serialization(data: dict):
         if not product:
             print("[DEBUG] product_repo.create_product returned None")
             abort(409, "Duplicate slug. Product already exists.")
+        db.session.commit()
         return serialize_product(product)
     except HTTPException as e:
         raise e  # ✅ Let Flask handle HTTP errors like abort(409)
+    except IntegrityError as e:
+        db.session.rollback()
+        print("[INTEGRITY ERROR DURING PRODUCT CREATION]")
+        print(e)
+        abort(409, "Duplicate slug. Product already exists.")
     except Exception as e:
+        db.session.rollback()
         print("[CRITICAL ERROR DURING PRODUCT CREATION]")
         print(e)
         abort(500, f"Server Error: {str(e)}")
@@ -116,6 +132,11 @@ def update_product_with_serialization(product_id: int, data: dict):
     product = product_repo.update_product(product_id, data)
     if not product:
         return None
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
     return serialize_product(product)
 
 
@@ -123,6 +144,11 @@ def delete_product_and_return_message(product_id: int):
     product = product_repo.delete_product(product_id)
     if not product:
         return None
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
     return {"message": "Product deleted"}
 
 
@@ -130,4 +156,9 @@ def approve_product_by_id(product_id: int):
     product = product_repo.approve_product(product_id)
     if not product:
         raise ValueError("Product not found")
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
     return serialize_product(product)

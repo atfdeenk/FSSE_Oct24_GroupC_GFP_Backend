@@ -280,7 +280,7 @@ def test_vendor_cannot_access_admin_list(client, vendor_token):
 
 def test_customer_get_balance(client, customer_token):
     headers = {"Authorization": f"Bearer {customer_token}"}
-    response = client.get("/me/balance", headers=headers)
+    response = client.get("/users/me/balance", headers=headers)
 
     assert response.status_code == 200
     assert "balance" in response.json
@@ -289,7 +289,7 @@ def test_customer_get_balance(client, customer_token):
 
 def test_vendor_get_balance(client, vendor_token):
     headers = {"Authorization": f"Bearer {vendor_token}"}
-    response = client.get("/me/balance", headers=headers)
+    response = client.get("/users/me/balance", headers=headers)
 
     assert response.status_code == 200
     assert "balance" in response.json
@@ -301,7 +301,7 @@ def test_customer_patch_balance(client, customer_token):
     new_balance = 100000.0
 
     response = client.patch(
-        "/me/balance", json={"balance": new_balance}, headers=headers
+        "/users/me/balance", json={"balance": new_balance}, headers=headers
     )
 
     assert response.status_code == 200
@@ -313,7 +313,7 @@ def test_vendor_patch_balance(client, vendor_token):
     new_balance = 50000.0
 
     response = client.patch(
-        "/me/balance", json={"balance": new_balance}, headers=headers
+        "/users/me/balance", json={"balance": new_balance}, headers=headers
     )
 
     assert response.status_code == 200
@@ -322,7 +322,9 @@ def test_vendor_patch_balance(client, vendor_token):
 
 def test_patch_negative_balance(client, customer_token):
     headers = {"Authorization": f"Bearer {customer_token}"}
-    response = client.patch("/me/balance", json={"balance": -1000}, headers=headers)
+    response = client.patch(
+        "/users/me/balance", json={"balance": -1000}, headers=headers
+    )
 
     assert response.status_code == 400
     assert response.json["msg"] == "Balance cannot be negative"

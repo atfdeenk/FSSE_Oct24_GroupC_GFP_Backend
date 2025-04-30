@@ -5,12 +5,7 @@ from models.product_category import ProductCategories
 def assign_category_to_product(product_id, category_id):
     relation = ProductCategories(product_id=product_id, category_id=category_id)
     db.session.add(relation)
-    try:
-        db.session.commit()
-        return relation
-    except:
-        db.session.rollback()
-        return None
+    return relation
 
 
 def get_categories_by_product(product_id):
@@ -23,10 +18,5 @@ def remove_category_from_product(product_id, category_id):
     ).first()
     if relation:
         db.session.delete(relation)
-        try:
-            db.session.commit()
-            return True
-        except:
-            db.session.rollback()
-            return False
+        return True
     return False
