@@ -26,11 +26,16 @@ def create_user(data):
             raise ValueError("Missing required field: role")
 
         user = user_repo.create_user(data)
-        return user
+        db.session.commit()  # Commit after adding user
+        return user, None
     except IntegrityError as e:
         print("IntegrityError:", e)  # Debug output
         db.session.rollback()
-        return None
+        return None, "User with this email or username already exists."
+    except Exception as e:
+        print("Exception in create_user:", e)
+        db.session.rollback()
+        return None, "Failed to create user due to server error."
 
 
 def authenticate(email, password):
@@ -135,14 +140,16 @@ def get_me_service():
             }
         ),
         200,
-    )  # Ensure it always returns a tuple with status code
+    )
 
 
 def get_all_non_admin_users():
     return user_repo.get_users_exclude_role("admin")
 
+
 def get_admin_users():
     return user_repo.get_users_by_role("admin")
+
 
 def get_user_by_id_with_admin_check(target_user_id, current_user_role):
     user = user_repo.get_user_by_id(target_user_id)
@@ -155,8 +162,9 @@ def get_user_by_id_with_admin_check(target_user_id, current_user_role):
     return user, None
 
 
-
-def get_user_balance_service(user_id: int, current_user_id: int, current_user_role: str):
+def get_user_balance_service(
+    user_id: int, current_user_id: int, current_user_role: str
+):
     user = user_repo.get_user_by_id(user_id)
     if not user:
         return None, "User not found"
@@ -166,6 +174,7 @@ def get_user_balance_service(user_id: int, current_user_id: int, current_user_ro
 
     return user.balance or 0.0, None
 
+
 def update_my_balance_service(user_id: int, new_balance: float):
     user = user_repo.get_user_by_id(user_id)
 
@@ -173,6 +182,6 @@ def update_my_balance_service(user_id: int, new_balance: float):
         return None, "User not found"
 
     from decimal import Decimal
+
     updated_user = user_repo.update_user_balance(user_id, Decimal(str(new_balance)))
     return updated_user, None
-

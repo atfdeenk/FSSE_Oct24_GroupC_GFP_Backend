@@ -10,8 +10,29 @@ from services.product_services import (
     approve_product_by_id,  # Add this if needed
 )
 import services.product_services as product_services
+from marshmallow import Schema, fields, ValidationError
 
 product_bp = Blueprint("product_bp", __name__)
+
+
+# Define input schema for product creation and update
+class ProductSchema(Schema):
+    name = fields.Str(required=True)
+    slug = fields.Str(required=True)
+    description = fields.Str()
+    currency = fields.Str()
+    price = fields.Decimal(required=True)
+    discount_percentage = fields.Float()
+    stock_quantity = fields.Int()
+    unit_quantity = fields.Str()
+    image_url = fields.Str()
+    location = fields.Str()
+    featured = fields.Bool()
+    flash_sale = fields.Bool()
+    category_ids = fields.List(fields.Int())
+
+
+product_schema = ProductSchema()
 
 
 @product_bp.route("/products", methods=["GET"])
@@ -63,13 +84,17 @@ def get_product(product_id):
 @jwt_required()
 @role_required("vendor")
 def create_product():
-
     if not request.is_json:
-        print("❌ Not JSON")
         return jsonify({"msg": "Invalid content type"}), 400
     data = request.get_json()
 
-    product = create_product_with_serialization(data)
+    # Validate input data
+    try:
+        validated_data = product_schema.load(data)
+    except ValidationError as err:
+        return jsonify({"msg": "Validation error", "errors": err.messages}), 400
+
+    product = create_product_with_serialization(validated_data)
     if not product:
         return (
             jsonify({"message": "Error creating product (possibly slug conflict)"}),
@@ -82,8 +107,17 @@ def create_product():
 @jwt_required()
 @role_required("vendor")
 def update_product(product_id):
+    if not request.is_json:
+        return jsonify({"msg": "Invalid content type"}), 400
     data = request.get_json()
-    product = update_product_with_serialization(product_id, data)
+
+    # Validate input data
+    try:
+        validated_data = product_schema.load(data, partial=True)
+    except ValidationError as err:
+        return jsonify({"msg": "Validation error", "errors": err.messages}), 400
+
+    product = update_product_with_serialization(product_id, validated_data)
     if not product:
         return jsonify({"message": "Product not found"}), 404
     return jsonify(product), 200

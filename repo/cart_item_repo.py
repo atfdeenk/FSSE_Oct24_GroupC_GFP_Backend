@@ -6,20 +6,10 @@ def add_cart_item(cart_id, product_id, quantity):
     existing = CartItems.query.filter_by(cart_id=cart_id, product_id=product_id).first()
     if existing:
         existing.quantity += quantity
-        try:
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-            raise
         return existing
 
     item = CartItems(cart_id=cart_id, product_id=product_id, quantity=quantity)
     db.session.add(item)
-    try:
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        raise
     return item
 
 
@@ -36,11 +26,6 @@ def update_cart_item_quantity(cart_item_id, quantity):
     item = db.session.get(CartItems, cart_item_id)
     if item:
         item.quantity = quantity
-        try:
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-            raise
     return item
 
 
@@ -48,10 +33,5 @@ def remove_cart_item(cart_item_id):
     item = db.session.get(CartItems, cart_item_id)
     if item:
         db.session.delete(item)
-        try:
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
-            raise
         return True
     return False

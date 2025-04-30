@@ -127,6 +127,8 @@ def init_db(app):
         app.test_category_id = category.id
 
         yield
+
+        db.session.remove()  # Close and remove session to avoid locked DB
         db.drop_all()
 
 

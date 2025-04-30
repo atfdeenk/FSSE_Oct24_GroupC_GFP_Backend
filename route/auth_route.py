@@ -8,21 +8,53 @@ from flask_jwt_extended import (
 from services import user_services
 from services.user_services import get_me_service
 from shared.auth import role_required
+from marshmallow import Schema, fields, ValidationError
 
 auth_bp = Blueprint("auth_bp", __name__)
+
+
+# Define input schema for user registration and update
+class UserSchema(Schema):
+    username = fields.Str(required=True)
+    email = fields.Email(required=True)
+    password = fields.Str(required=True, load_only=True)
+    first_name = fields.Str(required=True)
+    last_name = fields.Str(required=True)
+    phone = fields.Str(required=True)
+    role = fields.Str(required=True)
+    date_of_birth = fields.Str(required=True)
+    address = fields.Str(required=True)
+    city = fields.Str(required=True)
+    state = fields.Str(required=True)
+    zip_code = fields.Str(required=True)
+    country = fields.Str(required=True)
+    image_url = fields.Str(required=True)
+    bank_account = fields.Str(required=True)
+    bank_name = fields.Str(required=True)
+
+
+user_schema = UserSchema(partial=True)  # partial=True allows partial updates
 
 
 # Public: anyone can register
 @auth_bp.route("/register", methods=["POST"])
 def register():
+    if not request.is_json:
+        return jsonify({"msg": "Invalid content type"}), 400
     data = request.get_json()
     try:
-        user = user_services.create_user(data)
-        if not user:
-            return jsonify({"msg": "User registration failed"}), 400
-        return jsonify({"msg": "User registered successfully"}), 201
-    except ValueError as e:
-        return jsonify({"msg": str(e)}), 400
+        validated_data = user_schema.load(data)
+    except ValidationError as err:
+        # Return detailed validation errors for debugging
+        return jsonify({"msg": "Validation error", "errors": err.messages}), 400
+
+    user, error = user_services.create_user(validated_data)
+    if error:
+        # Return detailed error message from service
+        return jsonify({"msg": error}), 400
+    if not user:
+        return jsonify({"msg": "User registration failed"}), 400
+    return jsonify({"msg": "User registered successfully"}), 201
 
 
 # Public: anyone can log in
@@ -40,7 +72,8 @@ def login():
     user = user_services.get_user_by_id(user.id)
 
     token = create_access_token(
-        identity=str(user.id), additional_claims={"role": user.role.value, "city": user.city or "Unknown"}
+        identity=str(user.id),
+        additional_claims={"role": user.role.value, "city": user.city or "Unknown"},
     )
 
     return jsonify(access_token=token), 200
@@ -83,12 +116,20 @@ def me():
 @jwt_required()
 @role_required("vendor", "customer", "admin")  # Optional: restrict to known roles
 def update_user(user_id):
+    if not request.is_json:
+        return jsonify({"msg": "Invalid content type"}), 400
     data = request.get_json()
+
+    # Validate input data
+    try:
+        validated_data = user_schema.load(data, partial=True)
+    except ValidationError as err:
+        return jsonify({"msg": "Validation error", "errors": err.messages}), 400
 
     current_user_id = int(get_jwt_identity())
     current_user_role = get_jwt().get("role")
     user, error = user_services.update_user(
-        user_id, data, current_user_id, current_user_role
+        user_id, validated_data, current_user_id, current_user_role
     )
 
     if error:
@@ -127,7 +168,9 @@ def delete_user(user_id):
     current_user_id = int(get_jwt_identity())
     current_user_role = get_jwt().get("role")
 
-    response_message, error = user_services.delete_user(user_id, current_user_id, current_user_role)
+    response_message, error = user_services.delete_user(
+        user_id, current_user_id, current_user_role
+    )
 
     if error:
         return jsonify({"msg": error}), 403 if error == "Unauthorized" else 404
@@ -139,34 +182,48 @@ def delete_user(user_id):
 @jwt_required()
 def get_all_non_admin_users():
     users = user_services.get_all_non_admin_users()
-    return jsonify([
-        {
-            "id": u.id,
-            "username": u.username,
-            "city": u.city,
-            "image_url": u.image_url,
-            "role": u.role.value,
-        }
-        for u in users
-    ]), 200
+    return (
+        jsonify(
+            [
+                {
+                    "id": u.id,
+                    "username": u.username,
+                    "city": u.city,
+                    "image_url": u.image_url,
+                    "role": u.role.value,
+                }
+                for u in users
+            ]
+        ),
+        200,
+    )
+
 
 @auth_bp.route("/users/<int:user_id>", methods=["GET"])
 @jwt_required()
 def get_user_by_id(user_id):
     current_user_role = get_jwt().get("role")
 
-    user, error = user_services.get_user_by_id_with_admin_check(user_id, current_user_role)
+    user, error = user_services.get_user_by_id_with_admin_check(
+        user_id, current_user_role
+    )
     if error:
-        return jsonify({"msg": error}), 403 if error == "Unauthorized to view admin accounts" else 404
+        return jsonify({"msg": error}), (
+            403 if error == "Unauthorized to view admin accounts" else 404
+        )
 
-    return jsonify({
-        "id": user.id,
-        "username": user.username,
-        "city": user.city,
-        "image_url": user.image_url,
-        "role": user.role.value,
-    }), 200
-
+    return (
+        jsonify(
+            {
+                "id": user.id,
+                "username": user.username,
+                "city": user.city,
+                "image_url": user.image_url,
+                "role": user.role.value,
+            }
+        ),
+        200,
+    )
 
 
 @auth_bp.route("/users/admins", methods=["GET"])
@@ -174,16 +231,21 @@ def get_user_by_id(user_id):
 @role_required("admin")
 def get_admin_users():
     users = user_services.get_admin_users()
-    return jsonify([
-        {
-            "id": u.id,
-            "username": u.username,
-            "city": u.city,
-            "image_url": u.image_url,
-            "role": u.role.value,
-        }
-        for u in users
-    ]), 200
+    return (
+        jsonify(
+            [
+                {
+                    "id": u.id,
+                    "username": u.username,
+                    "city": u.city,
+                    "image_url": u.image_url,
+                    "role": u.role.value,
+                }
+                for u in users
+            ]
+        ),
+        200,
+    )
 
 
 @auth_bp.route("/me/balance", methods=["GET"])
@@ -196,14 +258,15 @@ def get_my_balance():
     if not user:
         return jsonify({"msg": "User not found"}), 404
 
-    return jsonify({
-        "balance": float(user.balance or 0.0)
-    }), 200
+    return jsonify({"balance": float(user.balance or 0.0)}), 200
+
 
 @auth_bp.route("/me/balance", methods=["PATCH"])
 @jwt_required()
 @role_required("customer", "vendor")
 def update_my_balance():
+    if not request.is_json:
+        return jsonify({"msg": "Invalid content type"}), 400
     data = request.get_json()
     new_balance = data.get("balance")
 
@@ -215,13 +278,19 @@ def update_my_balance():
 
     current_user_id = int(get_jwt_identity())
 
-    updated_user, error = user_services.update_my_balance_service(current_user_id, new_balance)
+    updated_user, error = user_services.update_my_balance_service(
+        current_user_id, new_balance
+    )
 
     if error:
         return jsonify({"msg": error}), 404
 
-    return jsonify({
-        "msg": "Balance updated successfully",
-        "balance": float(updated_user.balance),
-    }), 200
-
+    return (
+        jsonify(
+            {
+                "msg": "Balance updated successfully",
+                "balance": float(updated_user.balance),
+            }
+        ),
+        200,
+    )

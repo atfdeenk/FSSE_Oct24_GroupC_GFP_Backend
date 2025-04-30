@@ -23,28 +23,17 @@ def get_paginated_products(page: int, limit: int):
 
 
 def create_product(data):
-    try:
-        print("[DEBUG] raw data:", data)
-        category_ids = data.pop("category_ids", [])  # Extract category_ids
-        product = Products(**data)
-        db.session.add(product)
-        db.session.flush()  # Assign product.id before commit
+    print("[DEBUG] raw data:", data)
+    category_ids = data.pop("category_ids", [])  # Extract category_ids
+    product = Products(**data)
+    db.session.add(product)
+    db.session.flush()  # Assign product.id before commit
 
-        # Create product-category mappings
-        for cid in category_ids:
-            db.session.add(ProductCategories(product_id=product.id, category_id=cid))
+    # Create product-category mappings
+    for cid in category_ids:
+        db.session.add(ProductCategories(product_id=product.id, category_id=cid))
 
-        db.session.commit()
-        print("[DEBUG] product created:", product)
-        return product
-    except IntegrityError as e:
-        db.session.rollback()
-        print("[DB ERROR] Duplicate constraint triggered:", e)
-        return None  # ✅ Return None for controlled failure
-    except Exception as e:
-        db.session.rollback()
-        print("[CRITICAL ERROR DURING PRODUCT CREATION]", e)
-        raise e
+    return product
 
 
 def update_product(product_id, data):
@@ -55,11 +44,6 @@ def update_product(product_id, data):
     for key, value in data.items():
         if hasattr(product, key):
             setattr(product, key, value)
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        raise e
     return product
 
 
@@ -74,11 +58,6 @@ def delete_product(product_id):
 
     CartItems.query.filter_by(product_id=product_id).delete()
     db.session.delete(product)
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        raise e
     return product
 
 
@@ -140,9 +119,4 @@ def approve_product(product_id: int) -> Products:
     if not product:
         return None
     product.is_approved = True
-    try:
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        raise e
     return product
