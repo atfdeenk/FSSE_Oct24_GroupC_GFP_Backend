@@ -14,8 +14,8 @@ def test_create_feedback(client, customer_token, seed_product):
     )
     assert response.status_code == 201
     data = response.get_json()
-    assert "id" in data
-    assert data["msg"] == "Feedback submitted"
+    assert "feedback" in data
+    assert data["msg"] == "Feedback submitted successfully"
 
 
 def test_create_feedback_rollback(client, customer_token, seed_product):
@@ -49,9 +49,10 @@ def test_get_feedback_by_product(client, customer_token, seed_product):
     response = client.get(f"/feedback/product/{seed_product.id}")
     assert response.status_code == 200
     data = response.get_json()
-    assert isinstance(data, list)
-    assert len(data) >= 1
-    assert data[0]["product_id"] == seed_product.id
+    assert isinstance(data, dict)
+    assert "feedback" in data
+    assert len(data["feedback"]) >= 1
+    assert data["feedback"][0]["product_id"] == seed_product.id
 
 
 def test_get_feedback_by_user(client, app, init_db, customer_token, seed_product):
@@ -70,8 +71,9 @@ def test_get_feedback_by_user(client, app, init_db, customer_token, seed_product
         )
         assert response.status_code == 200
         data = response.get_json()
-        assert isinstance(data, list)
-        assert any(fb["comment"] == "Excellent product" for fb in data)
+        assert isinstance(data, dict)
+        assert "feedback" in data
+        assert any(fb["comment"] == "Excellent product" for fb in data["feedback"])
 
 
 def test_get_all_feedback(client, customer_token, seed_product):
@@ -90,7 +92,8 @@ def test_get_all_feedback(client, customer_token, seed_product):
     response = client.get("/feedback?page=1&per_page=2")
     assert response.status_code == 200
     data = response.get_json()
-    assert len(data) <= 2  # pagination test
+    assert "feedback" in data
+    assert len(data["feedback"]) <= 2  # pagination test
 
 
 def test_delete_feedback(client, app, customer_token, seed_product):
@@ -104,7 +107,7 @@ def test_delete_feedback(client, app, customer_token, seed_product):
             "comment": "Temporary feedback",
         },
     )
-    feedback_id = response.get_json()["id"]
+    feedback_id = response.get_json()["feedback"]["id"]
 
     # Delete it
     response = client.delete(
@@ -112,4 +115,4 @@ def test_delete_feedback(client, app, customer_token, seed_product):
         headers={"Authorization": f"Bearer {customer_token}"},
     )
     assert response.status_code == 200
-    assert response.get_json()["msg"] == "Feedback deleted"
+    assert response.get_json()["msg"] == "Feedback deleted successfully"
