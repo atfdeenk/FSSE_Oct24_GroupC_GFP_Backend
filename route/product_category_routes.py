@@ -17,6 +17,7 @@ def add_category(product_id):
         return jsonify({"message": "Category already assigned or failed"}), 400
 
     return jsonify({
+        "message": "Category assigned successfully",
         "product_id": relation.product_id,
         "category_id": relation.category_id
     }), 201
@@ -25,10 +26,13 @@ def add_category(product_id):
 @role_required("customer", "vendor")
 def get_categories(product_id):
     relations = product_category_service.get_product_categories(product_id)
-    return jsonify([
-        {"product_id": r.product_id, "category_id": r.category_id}
-        for r in relations
-    ]), 200
+    return jsonify({
+        "message": "Categories fetched successfully",
+        "categories": [
+            {"product_id": r.product_id, "category_id": r.category_id}
+            for r in relations
+        ]
+    }), 200
 
 @product_category_bp.route("/products/<int:product_id>/categories/<int:category_id>", methods=["DELETE"])
 @role_required("vendor")

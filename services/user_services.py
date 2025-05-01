@@ -8,15 +8,14 @@ from flask_jwt_extended import get_jwt_identity
 from repo.user_repo import get_user_by_id
 from flask import jsonify
 from instance.database import db
+from utils.security import hash_password
 
 from models.user import RoleType
 
 
 def create_user(data):
     try:
-        # ✅ Hash the password
-        hashed_password = generate_password_hash(data["password"])
-        data["password_hash"] = hashed_password
+        data["password_hash"] = hash_password(data["password"])
         del data["password"]
 
         # ✅ Convert role string to Enum

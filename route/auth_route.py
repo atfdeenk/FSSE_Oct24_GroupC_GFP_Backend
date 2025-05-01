@@ -9,6 +9,7 @@ from services import user_services
 from services.user_services import get_me_service
 from shared.auth import role_required
 from marshmallow import Schema, fields, ValidationError
+import time
 
 auth_bp = Blueprint("auth_bp", __name__)
 
@@ -58,25 +59,45 @@ def register():
 
 
 # Public: anyone can log in
+import time
+import os
+
 @auth_bp.route("/login", methods=["POST"])
 def login():
+    overall_start = time.perf_counter()
+
     data = request.get_json()
     email = data.get("email")
     password = data.get("password")
 
+    step1 = time.perf_counter()
     user = user_services.authenticate(email, password)
+    step2 = time.perf_counter()
+
     if not user:
+        if os.getenv("FLASK_ENV") == "development":
+            print(f"[LOGIN] User not found or wrong password (in {step2 - step1:.3f}s)")
         return jsonify({"msg": "Invalid credentials"}), 401
 
-    # 🔄 Refresh the user from DB to get the updated role
+    # Refresh from DB
+    step3 = time.perf_counter()
     user = user_services.get_user_by_id(user.id)
+    step4 = time.perf_counter()
 
     token = create_access_token(
         identity=str(user.id),
         additional_claims={"role": user.role.value, "city": user.city or "Unknown"},
     )
+    step5 = time.perf_counter()
+
+    if os.getenv("FLASK_ENV") == "development":
+        print(f"[LOGIN] Auth lookup: {step2 - step1:.3f}s")
+        print(f"[LOGIN] Refresh user: {step4 - step3:.3f}s")
+        print(f"[LOGIN] Token creation: {step5 - step4:.3f}s")
+        print(f"[LOGIN] Total: {step5 - overall_start:.3f}s")
 
     return jsonify(access_token=token), 200
+
 
 
 # Private: any authenticated user can access their own info
