@@ -34,7 +34,30 @@ def create_order():
     if error:
         return jsonify({"msg": error}), 400
 
-    return jsonify({"msg": "Order created", "order_id": order.id}), 201
+    order_items = order_services.get_order_items(order.id)
+
+    response_items = [
+        {
+            "product_id": item.product_id,
+            "product_name": item.product.name,
+            "quantity": item.quantity,
+            "image_url": item.product.image_url,
+            "unit_price": float(item.unit_price),
+            "vendor_id": item.product.vendor_id,
+        }
+        for item in order_items
+    ]
+
+    return (
+        jsonify(
+            {
+                "msg": "Order created",
+                "order_id": order.id,
+                "items": response_items,
+            }
+        ),
+        201,
+    )
 
 
 # Get a specific order
@@ -57,8 +80,11 @@ def get_order(order_id):
                     "items": [
                         {
                             "product_id": item.product_id,
+                            "product_name": item.product.name,
                             "quantity": item.quantity,
+                            "image_url": item.product.image_url,
                             "unit_price": float(item.unit_price),
+                            "vendor_id": item.product.vendor_id,
                         }
                         for item in items
                     ],
@@ -77,18 +103,32 @@ def get_user_orders():
     user_id = current_user.get("id") if isinstance(current_user, dict) else current_user
     orders = order_services.get_user_orders(user_id)
 
+    orders_with_items = []
+    for order in orders:
+        order_items = order_services.get_order_items(order.id)
+        items = [
+            {
+                "product_id": item.product_id,
+                "product_name": item.product.name,
+                "quantity": item.quantity,
+                "image_url": item.product.image_url,
+                "unit_price": float(item.unit_price),
+                "vendor_id": item.product.vendor_id,
+            }
+            for item in order_items
+        ]
+        orders_with_items.append(
+            {
+                "id": order.id,
+                "total_amount": str(order.total_amount),
+                "status": order.status,
+                "created_at": order.created_at.isoformat(),
+                "items": items,
+            }
+        )
+
     return (
-        jsonify(
-            [
-                {
-                    "id": order.id,
-                    "total_amount": str(order.total_amount),
-                    "status": order.status,
-                    "created_at": order.created_at.isoformat(),
-                }
-                for order in orders
-            ]
-        ),
+        jsonify(orders_with_items),
         200,
     )
 
