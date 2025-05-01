@@ -259,6 +259,9 @@ pytest==8.3.5 \
 pytest-cov==6.1.1 \
     --hash=sha256:46935f7aaefba760e716c2ebfbe1c216240b9592966e7da99ea8292d4d3e2a0a \
     --hash=sha256:bddf29ed2d0ab6f4df17b4c55b0a657287db8684af9c42ea546b21b1041b3dde
+python-dotenv==1.1.0 \
+    --hash=sha256:41f90bc6f5f177fb41f53e87666db362025010eb28f60a01c9143bfa33a2b2d5 \
+    --hash=sha256:d7c01d9e2293916c18baf562d95698754b0dbbb5e74d457c45d4f6561fb9d55d
 sqlalchemy==2.0.40 \
     --hash=sha256:0bb933a650323e476a2e4fbef8997a10d0003d4da996aad3fd7873e962fdde4d \
     --hash=sha256:110179728e442dae85dd39591beb74072ae4ad55a44eda2acc6ec98ead80d5f2 \
