@@ -1,6 +1,7 @@
 from instance.database import db
 from datetime import datetime
 from shared import crono
+from models.user import Users
 
 
 class WishlistItems(db.Model):
@@ -15,6 +16,8 @@ class WishlistItems(db.Model):
     )
     vendor_id: int = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     added_at: datetime = db.Column(db.DateTime, default=crono.now)
+
+    vendor = db.relationship("Users", foreign_keys=[vendor_id], lazy="joined")
 
     def __repr__(self):
         return f"<WishlistItem User {self.user_id} Product {self.product_id}>"
