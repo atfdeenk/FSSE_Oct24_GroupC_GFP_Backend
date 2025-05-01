@@ -22,17 +22,17 @@ class UserSchema(Schema):
     password = fields.Str(required=True, load_only=True)
     first_name = fields.Str(required=True)
     last_name = fields.Str(required=True)
-    phone = fields.Str(required=True)
+    phone = fields.Str(required=False)  # true
     role = fields.Str(required=True)
-    date_of_birth = fields.Str(required=True)
-    address = fields.Str(required=True)
-    city = fields.Str(required=True)
-    state = fields.Str(required=True)
-    zip_code = fields.Str(required=True)
-    country = fields.Str(required=True)
-    image_url = fields.Str(required=True)
-    bank_account = fields.Str(required=True)
-    bank_name = fields.Str(required=True)
+    date_of_birth = fields.Str(required=False)
+    address = fields.Str(required=False)
+    city = fields.Str(required=False)
+    state = fields.Str(required=False)
+    zip_code = fields.Str(required=False)
+    country = fields.Str(required=False)
+    image_url = fields.Str(required=False)
+    bank_account = fields.Str(required=False)
+    bank_name = fields.Str(required=False)
 
 
 user_schema = UserSchema(partial=True)  # partial=True allows partial updates
