@@ -100,7 +100,10 @@ def create_product():
             jsonify({"message": "Error creating product (possibly slug conflict)"}),
             400,
         )
-    return jsonify(product), 201
+    return jsonify({
+        "message": "Product created successfully",
+        **product
+    }), 201
 
 
 @product_bp.route("/products/<int:product_id>", methods=["PUT"])
@@ -120,7 +123,10 @@ def update_product(product_id):
     product = update_product_with_serialization(product_id, validated_data)
     if not product:
         return jsonify({"message": "Product not found"}), 404
-    return jsonify(product), 200
+    return jsonify({
+        "message": "Product updated successfully",
+        **product
+    }), 200
 
 
 @product_bp.route("/products/<int:product_id>", methods=["DELETE"])
@@ -130,7 +136,10 @@ def delete_product(product_id):
     result = delete_product_and_return_message(product_id)
     if not result:
         return jsonify({"message": "Product not found"}), 404
-    return jsonify(result), 200
+    return jsonify({
+        "message": "Product deleted successfully",
+        **result
+    }), 200
 
 
 @product_bp.route("/products/<int:product_id>/approve", methods=["PATCH"])

@@ -13,6 +13,7 @@ def get_cart():
     user_id = int(get_jwt_identity())
     cart = cart_service.get_or_create_cart(user_id)
     return jsonify({
+        "message": "Cart retrieved successfully.",
         "cart_id": cart.id,
         "user_id": cart.user_id,
     }), 200
@@ -28,6 +29,7 @@ def add_item():
 
     item = cart_service.add_item_to_cart(user_id, product_id, quantity)
     return jsonify({
+        "message": "Item added to cart successfully.",
         "cart_id": item.cart_id,
         "product_id": item.product_id,
         "quantity": item.quantity
@@ -39,13 +41,16 @@ def add_item():
 def get_cart_items():
     user_id = int(get_jwt_identity())
     items = cart_item_service.get_cart_items(user_id)
-    return jsonify([
-        {
-            "id": i.id,
-            "product_id": i.product_id,
-            "quantity": i.quantity
-        } for i in items
-    ]), 200
+    return jsonify({
+        "message": "Cart items fetched successfully.",
+        "items": [
+            {
+                "id": i.id,
+                "product_id": i.product_id,
+                "quantity": i.quantity
+            } for i in items
+        ]
+    }), 200
 
 @cart_bp.route("/cart/items/<int:item_id>", methods=["PATCH"])
 @jwt_required()
@@ -57,8 +62,9 @@ def update_item(item_id):
     quantity = data.get("quantity")
     updated = cart_item_service.update_item(item_id, quantity)
     if not updated:
-        return jsonify({"message": "Cart item not found"}), 404
+        return jsonify({"message": "Cart item not found."}), 404
     return jsonify({
+        "message": "Cart item updated successfully.",
         "id": updated.id,
         "quantity": updated.quantity
     }), 200
@@ -71,6 +77,5 @@ def delete_item(item_id):
     role = get_jwt().get("role")
     success = cart_item_service.delete_item(item_id)
     if not success:
-        return jsonify({"message": "Cart item not found"}), 404
-    return jsonify({"message": "Item removed"}), 200
-
+        return jsonify({"message": "Cart item not found."}), 404
+    return jsonify({"message": "Item removed from cart successfully."}), 200
