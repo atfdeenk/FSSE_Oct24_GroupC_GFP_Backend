@@ -12,17 +12,21 @@ def get_all_categories():
     categories = category_service.get_all_categories()
     return (
         jsonify(
-            [
-                {
-                    "id": c.id,
-                    "name": c.name,
-                    "slug": c.slug,
-                    "image_url": c.image_url,
-                    "vendor_id": c.vendor_id,
-                    "parent_id": c.parent_id,
-                }
-                for c in categories
-            ]
+            {
+                "msg": "Categories retrieved successfully",
+                "count": len(categories),
+                "categories": [
+                    {
+                        "id": c.id,
+                        "name": c.name,
+                        "slug": c.slug,
+                        "image_url": c.image_url,
+                        "vendor_id": c.vendor_id,
+                        "parent_id": c.parent_id,
+                    }
+                    for c in categories
+                ],
+            }
         ),
         200,
     )
@@ -33,16 +37,19 @@ def get_all_categories():
 def get_category(category_id):
     category = category_service.get_category_by_id(category_id)
     if not category:
-        return jsonify({"msg": "Category not found"}), 404
+        return jsonify({"msg": "Category not found", "category_id": category_id}), 404
     return (
         jsonify(
             {
-                "id": category.id,
-                "name": category.name,
-                "slug": category.slug,
-                "image_url": category.image_url,
-                "vendor_id": category.vendor_id,
-                "parent_id": category.parent_id,
+                "msg": "Category retrieved successfully",
+                "category": {
+                    "id": category.id,
+                    "name": category.name,
+                    "slug": category.slug,
+                    "image_url": category.image_url,
+                    "vendor_id": category.vendor_id,
+                    "parent_id": category.parent_id,
+                },
             }
         ),
         200,
@@ -67,7 +74,22 @@ def create_category():
         print(f"Error creating category: {error}")
     if error or not category:
         return jsonify({"msg": error or "Failed to create category"}), 400
-    return jsonify({"msg": "Category created", "id": category.id}), 201
+    return (
+        jsonify(
+            {
+                "msg": "Category created successfully",
+                "category": {
+                    "id": category.id,
+                    "name": category.name,
+                    "slug": category.slug,
+                    "image_url": category.image_url,
+                    "vendor_id": category.vendor_id,
+                    "parent_id": category.parent_id,
+                },
+            }
+        ),
+        201,
+    )
 
 
 # Protected: Vendor/Admin can update a category
@@ -79,8 +101,26 @@ def update_category(category_id):
     current_user = get_jwt_identity()
     category, error = category_service.update_category(category_id, data, current_user)
     if error:
-        return jsonify({"msg": error}), 403 if error == "Unauthorized" else 404
-    return jsonify({"msg": "Category updated"}), 200
+        return (
+            jsonify({"msg": error}),
+            403 if error == "Unauthorized" else 404,
+        )
+    return (
+        jsonify(
+            {
+                "msg": "Category updated successfully",
+                "category": {
+                    "id": category.id,
+                    "name": category.name,
+                    "slug": category.slug,
+                    "image_url": category.image_url,
+                    "vendor_id": category.vendor_id,
+                    "parent_id": category.parent_id,
+                },
+            }
+        ),
+        200,
+    )
 
 
 # Protected: Vendor/Admin can delete a category
@@ -91,5 +131,8 @@ def delete_category(category_id):
     current_user = get_jwt_identity()
     category, error = category_service.delete_category(category_id, current_user)
     if error:
-        return jsonify({"msg": error}), 403 if error == "Unauthorized" else 404
-    return jsonify({"msg": "Category deleted"}), 200
+        return (
+            jsonify({"msg": error}),
+            403 if error == "Unauthorized" else 404,
+        )
+    return jsonify({"msg": "Category deleted successfully"}), 200
