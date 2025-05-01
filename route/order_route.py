@@ -85,6 +85,11 @@ def get_order(order_id):
                             "image_url": item.product.image_url,
                             "unit_price": float(item.unit_price),
                             "vendor_id": item.product.vendor_id,
+                            "vendor_name": (
+                                item.product.vendor.username
+                                if item.product.vendor
+                                else None
+                            ),
                         }
                         for item in items
                     ],
@@ -114,6 +119,9 @@ def get_user_orders():
                 "image_url": item.product.image_url,
                 "unit_price": float(item.unit_price),
                 "vendor_id": item.product.vendor_id,
+                "vendor_name": (
+                    item.product.vendor.username if item.product.vendor else None
+                ),
             }
             for item in order_items
         ]
