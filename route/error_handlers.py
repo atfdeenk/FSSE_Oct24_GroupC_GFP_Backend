@@ -1,15 +1,15 @@
 from flask import jsonify
-from flask_jwt_extended.exceptions import NoAuthorizationError, ExpiredSignatureError
+from flask_jwt_extended.exceptions import NoAuthorizationError
 from flask_jwt_extended import JWTManager
 
 
-def register_error_handlers(app: "Flask", jwt: JWTManager):
+def register_error_handlers(app: "Flask", jwt: JWTManager):  # type: ignore
     @app.errorhandler(NoAuthorizationError)
     def handle_no_auth_error(e):
         return jsonify({"error": "Authorization token is missing"}), 401
 
-    @app.errorhandler(ExpiredSignatureError)
-    def handle_expired_token_error(e):
+    @jwt.expired_token_loader
+    def expired_token_callback(jwt_header, jwt_payload):
         return jsonify({"error": "Authorization token has expired"}), 401
 
     @app.errorhandler(401)
