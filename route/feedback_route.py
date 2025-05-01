@@ -20,7 +20,22 @@ def create_feedback():
         return jsonify({"msg": error}), 400
     if feedback is None:
         return jsonify({"msg": "Failed to create feedback"}), 400
-    return jsonify({"msg": "Feedback submitted", "id": feedback.id}), 201
+    return (
+        jsonify(
+            {
+                "msg": "Feedback submitted successfully",
+                "feedback": {
+                    "id": feedback.id,
+                    "user_id": feedback.user_id,
+                    "product_id": feedback.product_id,
+                    "rating": feedback.rating,
+                    "comment": feedback.comment,
+                    "created_at": feedback.created_at.isoformat(),
+                },
+            }
+        ),
+        201,
+    )
 
 
 @feedback_bp.route("/feedback/product/<int:product_id>", methods=["GET"])
@@ -28,17 +43,21 @@ def get_feedback_by_product(product_id):
     feedback_list = feedback_services.get_feedback_by_product(product_id)
     return (
         jsonify(
-            [
-                {
-                    "id": fb.id,
-                    "user_id": fb.user_id,
-                    "product_id": fb.product_id,
-                    "rating": fb.rating,
-                    "comment": fb.comment,
-                    "created_at": fb.created_at.isoformat(),
-                }
-                for fb in feedback_list
-            ]
+            {
+                "msg": "Feedback retrieved successfully",
+                "count": len(feedback_list),
+                "feedback": [
+                    {
+                        "id": fb.id,
+                        "user_id": fb.user_id,
+                        "product_id": fb.product_id,
+                        "rating": fb.rating,
+                        "comment": fb.comment,
+                        "created_at": fb.created_at.isoformat(),
+                    }
+                    for fb in feedback_list
+                ],
+            }
         ),
         200,
     )
@@ -56,16 +75,20 @@ def get_feedback_by_user(user_id):
     feedback_list = feedback_services.get_feedback_by_user(user_id)
     return (
         jsonify(
-            [
-                {
-                    "id": fb.id,
-                    "product_id": fb.product_id,
-                    "rating": fb.rating,
-                    "comment": fb.comment,
-                    "created_at": fb.created_at.isoformat(),
-                }
-                for fb in feedback_list
-            ]
+            {
+                "msg": "Feedback retrieved successfully",
+                "count": len(feedback_list),
+                "feedback": [
+                    {
+                        "id": fb.id,
+                        "product_id": fb.product_id,
+                        "rating": fb.rating,
+                        "comment": fb.comment,
+                        "created_at": fb.created_at.isoformat(),
+                    }
+                    for fb in feedback_list
+                ],
+            }
         ),
         200,
     )
@@ -79,17 +102,21 @@ def get_all_feedback():
     feedback_list = feedback_services.get_all_feedback(page=page, per_page=per_page)
     return (
         jsonify(
-            [
-                {
-                    "id": fb.id,
-                    "user_id": fb.user_id,
-                    "product_id": fb.product_id,
-                    "rating": fb.rating,
-                    "comment": fb.comment,
-                    "created_at": fb.created_at.isoformat(),
-                }
-                for fb in feedback_list
-            ]
+            {
+                "msg": "Feedback retrieved successfully",
+                "count": len(feedback_list),
+                "feedback": [
+                    {
+                        "id": fb.id,
+                        "user_id": fb.user_id,
+                        "product_id": fb.product_id,
+                        "rating": fb.rating,
+                        "comment": fb.comment,
+                        "created_at": fb.created_at.isoformat(),
+                    }
+                    for fb in feedback_list
+                ],
+            }
         ),
         200,
     )
@@ -102,4 +129,4 @@ def delete_feedback(feedback_id):
     feedback, error = feedback_services.delete_feedback(feedback_id, current_user_id)
     if error:
         return jsonify({"msg": error}), 403 if error == "Unauthorized" else 404
-    return jsonify({"msg": "Feedback deleted"}), 200
+    return jsonify({"msg": "Feedback deleted successfully"}), 200
