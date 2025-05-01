@@ -102,7 +102,8 @@ def test_delete_product_images(client, app, seed_product, vendor_token):
             "/products/1/images", headers={"Authorization": f"Bearer {vendor_token}"}
         )
         assert response.status_code == 200
-        assert response.get_json()["message"] == "Images deleted"
+        assert response.get_json()["message"] == "Images deleted successfully"
+
 
 
 def test_get_images_when_none_exist(client, seed_product):

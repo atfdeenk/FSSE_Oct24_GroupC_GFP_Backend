@@ -83,6 +83,7 @@ def update_images(product_id):
     return (
         jsonify(
             {
+                "message": "Images updated successfully",
                 "product_id": updated.product_id,
                 "image1_url": updated.image1_url,
                 "image2_url": updated.image2_url,
@@ -99,4 +100,4 @@ def delete_images(product_id):
     success = product_image_service.delete_images(product_id)
     if not success:
         return jsonify({"message": "Images not found"}), 404
-    return jsonify({"message": "Images deleted"}), 200
+    return jsonify({"message": "Images deleted successfully"}), 200

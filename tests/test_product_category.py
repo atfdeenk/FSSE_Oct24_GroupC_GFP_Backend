@@ -47,8 +47,9 @@ def test_get_categories_of_product(client, app, seed_product, vendor_token):
             headers={"Authorization": f"Bearer {vendor_token}"},
         )
         assert response.status_code == 200
-        assert isinstance(response.json, list)
-        assert any(rel["category_id"] == 1 for rel in response.json)
+        assert isinstance(response.json["categories"], list)
+        assert any(rel["category_id"] == 1 for rel in response.json["categories"])
+
 
 
 def test_remove_category_from_product(client, app, seed_product, vendor_token):

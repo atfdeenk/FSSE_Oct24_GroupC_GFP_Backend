@@ -19,7 +19,11 @@ def add_category(product_id):
 
     return (
         jsonify(
-            {"product_id": relation.product_id, "category_id": relation.category_id}
+            {
+                "message": "Category assigned successfully",
+                "product_id": relation.product_id,
+                "category_id": relation.category_id,
+            }
         ),
         201,
     )
@@ -31,10 +35,13 @@ def get_categories(product_id):
     relations = product_category_service.get_product_categories(product_id)
     return (
         jsonify(
-            [
-                {"product_id": r.product_id, "category_id": r.category_id}
-                for r in relations
-            ]
+            {
+                "message": "Categories fetched successfully",
+                "categories": [
+                    {"product_id": r.product_id, "category_id": r.category_id}
+                    for r in relations
+                ],
+            }
         ),
         200,
     )

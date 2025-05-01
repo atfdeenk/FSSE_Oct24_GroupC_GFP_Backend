@@ -20,7 +20,7 @@ from route.wishlist_route import wishlist_bp
 
 
 def create_app(config_module=None):
-
+    """Create a Flask application instance."""
     app = Flask(__name__)
 
     # Determine configuration
