@@ -18,6 +18,9 @@ from route.feedback_route import feedback_bp
 from route.order_route import order_bp
 from route.wishlist_route import wishlist_bp
 
+# Import error handlers
+from route.error_handlers import register_error_handlers
+
 
 def create_app(config_module=None):
     """Create a Flask application instance."""
@@ -34,8 +37,11 @@ def create_app(config_module=None):
     CORS(app)
 
     # Setup extensions
-    JWTManager(app)
+    jwt = JWTManager(app)
     init_db(app)
+
+    # Register error handlers
+    register_error_handlers(app, jwt)
 
     # Teardown after each request
     @app.teardown_appcontext

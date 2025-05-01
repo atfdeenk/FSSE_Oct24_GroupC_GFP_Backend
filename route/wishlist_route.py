@@ -21,7 +21,9 @@ def get_wishlist():
                         "id": item.id,
                         "product_id": item.product_id,
                         "vendor_id": item.vendor_id,
-                        "vendor_name": item.vendor.name if item.vendor else None,
+                        "vendor_username": (
+                            item.vendor.username if item.vendor else None
+                        ),
                         "added_at": item.added_at.isoformat(),
                     }
                     for item in wishlist
