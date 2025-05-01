@@ -19,7 +19,10 @@ uv add taskipy              # for task automation
 
 uv add flask-cors           # for frontend-backend integration
 uv add marshmallow-sqlalchemy # for data validation
+uv add marshmallow           # for data validation
 uv export > requirements.txt  # export to requirements.txt
+
+uv remove marshmallow-sqlalchemy           # remove marshmallow-sqlalchemy
 
 ```
 

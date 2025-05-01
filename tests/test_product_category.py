@@ -16,7 +16,7 @@ def seed_product(app):
             price=50000.00,
             stock_quantity=10,
             unit_quantity="250g",
-            vendor_id=1
+            vendor_id=1,
         )
         db.session.add(product)
         db.session.commit()
@@ -30,7 +30,7 @@ def test_add_category_to_product(client, app, seed_product, vendor_token):
         response = client.post(
             "/products/1/categories",
             headers={"Authorization": f"Bearer {vendor_token}"},
-            json={"category_id": 1}
+            json={"category_id": 1},
         )
         assert response.status_code == 201
         assert "product_id" in response.json
@@ -44,11 +44,12 @@ def test_get_categories_of_product(client, app, seed_product, vendor_token):
 
         response = client.get(
             "/products/1/categories",
-            headers={"Authorization": f"Bearer {vendor_token}"}
+            headers={"Authorization": f"Bearer {vendor_token}"},
         )
         assert response.status_code == 200
-        assert isinstance(response.json, list)
-        assert any(rel["category_id"] == 1 for rel in response.json)
+        assert isinstance(response.json["categories"], list)
+        assert any(rel["category_id"] == 1 for rel in response.json["categories"])
+
 
 
 def test_remove_category_from_product(client, app, seed_product, vendor_token):
@@ -58,7 +59,7 @@ def test_remove_category_from_product(client, app, seed_product, vendor_token):
 
         response = client.delete(
             "/products/1/categories/1",
-            headers={"Authorization": f"Bearer {vendor_token}"}
+            headers={"Authorization": f"Bearer {vendor_token}"},
         )
         assert response.status_code == 200
         assert response.json["message"] == "Category removed"

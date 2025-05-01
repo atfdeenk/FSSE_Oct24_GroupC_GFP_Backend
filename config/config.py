@@ -37,3 +37,10 @@ class ProductionConfig(BaseConfig):
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")  # Must be fully provided
     FLASK_ENV = "production"
+
+
+class TestingConfig(BaseConfig):
+    TESTING = True
+    DEBUG = True
+    SQLALCHEMY_DATABASE_URI = "sqlite:///test.db"
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "testing-secret-key")

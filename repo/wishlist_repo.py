@@ -3,7 +3,9 @@ from models.wishlist_item import WishlistItems
 
 
 def get_user_wishlist(user_id: int):
-    return WishlistItems.query.filter_by(user_id=user_id).all()
+    return (
+        WishlistItems.query.filter_by(user_id=user_id).join(WishlistItems.vendor).all()
+    )
 
 
 def add_to_wishlist(user_id: int, product_id: int, vendor_id: int):

@@ -10,17 +10,23 @@ wishlist_bp = Blueprint("wishlist", __name__, url_prefix="/wishlist")
 def get_wishlist():
     user_id = get_jwt_identity()
     wishlist = wishlist_services.get_user_wishlist(user_id)
+    if not wishlist:
+        return jsonify({"message": "Wishlist is empty", "wishlist": []}), 200
     return (
         jsonify(
-            [
-                {
-                    "id": item.id,
-                    "product_id": item.product_id,
-                    "vendor_id": item.vendor_id,
-                    "added_at": item.added_at.isoformat(),
-                }
-                for item in wishlist
-            ]
+            {
+                "message": f"Wishlist contains {len(wishlist)} items",
+                "wishlist": [
+                    {
+                        "id": item.id,
+                        "product_id": item.product_id,
+                        "vendor_id": item.vendor_id,
+                        "vendor_name": item.vendor.name if item.vendor else None,
+                        "added_at": item.added_at.isoformat(),
+                    }
+                    for item in wishlist
+                ],
+            }
         ),
         200,
     )
@@ -35,7 +41,7 @@ def add_to_wishlist():
     vendor_id = data.get("vendor_id")
 
     if not product_id or not vendor_id:
-        return jsonify({"error": "Missing product_id or vendor_id"}), 400
+        return jsonify({"message": "Missing product_id or vendor_id"}), 400
 
     item = wishlist_services.add_to_wishlist(user_id, product_id, vendor_id)
 
@@ -52,7 +58,12 @@ def remove_from_wishlist():
     data = request.get_json()
     product_id = data.get("product_id")
     if not product_id:
-        return jsonify({"error": "Missing product_id"}), 400
+        return jsonify({"message": "Missing product_id"}), 400
+    # Check if item exists before removal
+    wishlist = wishlist_services.get_user_wishlist(user_id)
+    item_exists = any(item.product_id == product_id for item in wishlist)
+    if not item_exists:
+        return jsonify({"message": "Item not found in wishlist"}), 404
     wishlist_services.remove_from_wishlist(user_id, product_id)
     return jsonify({"message": "Item removed from wishlist"}), 200
 
