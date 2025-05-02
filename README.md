@@ -56,6 +56,34 @@ uv run flask db migrate -m "Initial migration"
 uv run flask db upgrade
 ```
 
+```toml
+[project]
+name = "bumibrew"
+version = "0.1.0"
+description = "Sustainable market backend built with Flask"
+readme = "README.md"
+requires-python = ">=3.11"
+
+dependencies = [
+    "flask",
+    "flask-sqlalchemy",
+    "flask-jwt-extended",
+    "flask-migrate",
+    "sqlalchemy",
+    "psycopg2-binary",
+    "pytest",
+    "pytest-cov",
+    "black",
+    "isort",
+    "taskipy>=1.14.1",
+    "flask-cors>=5.0.1",
+    "marshmallow-sqlalchemy>=1.4.2",
+    "python-dotenv>=1.1.0",
+]
+[tool.taskipy.tasks]
+fr = "flask --app app run --port 8000 --reload --debug"
+```
+
 ### 5. Flask App Directory Structure
 
 ```bash
