@@ -24,7 +24,7 @@ def get_user_by_id(user_id):
 def update_user(user, data):
     for key, value in data.items():
         if hasattr(user, key):
-            setattr(user, key, value)
+            setattr(user, key, value)      
     return user
 
 
