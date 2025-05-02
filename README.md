@@ -25,8 +25,11 @@ uv remove marshmallow-sqlalchemy           # remove marshmallow-sqlalchemy
 
 ```
 
+```txt
 gunicorn==21.2.0 \
- --hash=sha256:3213aa5e8c24949e792bcacfc176fef362e7aac80b76c56f6b5122bf350722f0
+    --hash=sha256:3213aa5e8c24949e792bcacfc176fef362e7aac80b76c56f6b5122bf350722f0
+
+```
 
 ```toml
     [tool.taskipy.tasks]
