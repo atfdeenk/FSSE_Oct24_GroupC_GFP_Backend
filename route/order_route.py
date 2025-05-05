@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from services import order_services
 
@@ -13,12 +13,18 @@ def create_order():
     items = data.get("items", [])
     current_user = get_jwt_identity()
 
+    current_app.logger.info(f"User {current_user} is attempting to create an order.")
+
     if not items:
+        current_app.logger.warning("Order creation failed: No items provided.")
         return jsonify({"msg": "No items to order"}), 400
 
     required_keys = {"product_id", "quantity", "unit_price"}
     for idx, item in enumerate(items):
         if not all(key in item for key in required_keys):
+            current_app.logger.warning(
+                f"Order creation failed: Item at index {idx} missing keys."
+            )
             return (
                 jsonify(
                     {
@@ -32,6 +38,7 @@ def create_order():
 
     order, error = order_services.create_order_with_items(user_id, items)
     if error:
+        current_app.logger.error(f"Order creation failed: {error}")
         return jsonify({"msg": error}), 400
 
     order_items = order_services.get_order_items(order.id)
@@ -47,6 +54,8 @@ def create_order():
         }
         for item in order_items
     ]
+
+    current_app.logger.info(f"Order {order.id} created successfully by user {user_id}.")
 
     return (
         jsonify(
@@ -64,11 +73,14 @@ def create_order():
 @order_bp.route("/orders/<int:order_id>", methods=["GET"])
 @jwt_required()
 def get_order(order_id):
+    current_app.logger.info(f"Fetching order {order_id}.")
     order = order_services.get_order(order_id)
     if not order:
+        current_app.logger.warning(f"Order {order_id} not found.")
         return jsonify({"msg": "Order not found"}), 404
 
     items = order_services.get_order_items(order_id)
+    current_app.logger.info(f"Order {order_id} fetched successfully.")
     return (
         jsonify(
             {
@@ -106,6 +118,7 @@ def get_order(order_id):
 def get_user_orders():
     current_user = get_jwt_identity()
     user_id = current_user.get("id") if isinstance(current_user, dict) else current_user
+    current_app.logger.info(f"Fetching all orders for user {user_id}.")
     orders = order_services.get_user_orders(user_id)
 
     orders_with_items = []
@@ -135,6 +148,8 @@ def get_user_orders():
             }
         )
 
+    current_app.logger.info(f"Fetched {len(orders_with_items)} orders for user {user_id}.")
+
     return (
         jsonify(orders_with_items),
         200,
@@ -149,14 +164,18 @@ def update_order_status(order_id):
     status = data.get("status")
 
     if not status:
+        current_app.logger.warning(f"Order status update failed: No status provided for order {order_id}.")
         return jsonify({"msg": "Status is required"}), 400
 
     order, error = order_services.update_order_status(order_id, status)
     if error:
         if error == "Order not found.":
+            current_app.logger.warning(f"Order status update failed: {error} (order {order_id})")
             return jsonify({"msg": error}), 404
+        current_app.logger.error(f"Order status update failed: {error} (order {order_id})")
         return jsonify({"msg": error}), 400
 
+    current_app.logger.info(f"Order {order_id} status updated to {status}.")
     return jsonify({"msg": "Order status updated"}), 200
 
 
@@ -166,6 +185,8 @@ def update_order_status(order_id):
 def delete_order(order_id):
     order, error = order_services.delete_order(order_id)
     if error:
+        current_app.logger.warning(f"Order deletion failed: {error} (order {order_id})")
         return jsonify({"msg": error}), 404
 
+    current_app.logger.info(f"Order {order_id} deleted successfully.")
     return jsonify({"msg": "Order deleted"}), 200

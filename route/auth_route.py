@@ -1,6 +1,6 @@
 import os
 import time
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app  # add current_app
 from flask_jwt_extended import (
     create_access_token,
     jwt_required,
@@ -48,21 +48,25 @@ user_schema = UserSchema(partial=True)  # partial=True allows partial updates
 @auth_bp.route("/register", methods=["POST"])
 @limiter.limit("5 per minute")
 def register():
+    current_app.logger.info("Register endpoint called")
     if not request.is_json:
+        current_app.logger.warning("Register: Invalid content type")
         return jsonify({"msg": "Invalid content type"}), 400
     data = request.get_json()
     try:
         validated_data = user_schema.load(data)
     except ValidationError as err:
-        # Return detailed validation errors for debugging
+        current_app.logger.warning(f"Register: Validation error - {err.messages}")
         return jsonify({"msg": "Validation error", "errors": err.messages}), 400
 
     user, error = user_services.create_user(validated_data)
     if error:
-        # Return detailed error message from service
+        current_app.logger.error(f"Register: {error}")
         return jsonify({"msg": error}), 400
     if not user:
+        current_app.logger.error("Register: User registration failed")
         return jsonify({"msg": "User registration failed"}), 400
+    current_app.logger.info(f"Register: User {user.username if user else 'unknown'} registered successfully")
     return jsonify({"msg": "User registered successfully"}), 201
 
 
@@ -70,6 +74,7 @@ def register():
 @auth_bp.route("/login", methods=["POST"])
 @limiter.limit("5 per minute")
 def login():
+    current_app.logger.info("Login endpoint called")
     overall_start = time.perf_counter()
 
     data = request.get_json()
@@ -81,6 +86,7 @@ def login():
     step2 = time.perf_counter()
 
     if not user:
+        current_app.logger.warning(f"Login failed for email: {email}")
         if os.getenv("FLASK_ENV") == "development":
             print(f"[LOGIN] User not found or wrong password (in {step2 - step1:.3f}s)")
         return jsonify({"msg": "Invalid credentials"}), 401
@@ -96,6 +102,8 @@ def login():
     )
     step5 = time.perf_counter()
 
+    current_app.logger.info(f"Login successful for user_id: {user.id}")
+
     if os.getenv("FLASK_ENV") == "development":
         print(f"[LOGIN] Auth lookup: {step2 - step1:.3f}s")
         print(f"[LOGIN] Refresh user: {step4 - step3:.3f}s")
@@ -109,12 +117,15 @@ def login():
 @auth_bp.route("/me", methods=["GET"])
 @jwt_required()
 def me():
+    current_app.logger.info("Me endpoint called")
     user_id = int(get_jwt_identity())
     user = user_services.get_user_by_id(user_id)
 
     if not user:
+        current_app.logger.warning(f"Me: User {user_id} not found")
         return jsonify({"msg": "User not found"}), 404
 
+    current_app.logger.info(f"Me: User {user_id} info returned")
     return (
         jsonify(
             {
@@ -143,7 +154,9 @@ def me():
 @jwt_required()
 @role_required("vendor", "customer", "admin")  # Optional: restrict to known roles
 def update_user(user_id):
+    current_app.logger.info(f"Update user endpoint called for user_id: {user_id}")
     if not request.is_json:
+        current_app.logger.warning(f"Update user {user_id}: Invalid content type")
         return jsonify({"msg": "Invalid content type"}), 400
     data = request.get_json()
 
@@ -151,17 +164,21 @@ def update_user(user_id):
     try:
         validated_data = user_schema.load(data, partial=True)
     except ValidationError as err:
+        current_app.logger.warning(f"Update user {user_id}: Validation error - {err.messages}")
         return jsonify({"msg": "Validation error", "errors": err.messages}), 400
 
     current_user_id = int(get_jwt_identity())
     current_user_role = get_jwt().get("role")
+    current_app.logger.info(f"User {current_user_id} ({current_user_role}) attempts to update user {user_id}")
     user, error = user_services.update_user(
         user_id, validated_data, current_user_id, current_user_role
     )
 
     if error:
+        current_app.logger.error(f"Update user {user_id} failed: {error}")
         return jsonify({"msg": error}), 403 if error == "Unauthorized" else 404
 
+    current_app.logger.info(f"User {user_id} updated successfully by user {current_user_id}")
     return jsonify({"msg": "User updated successfully"}), 200
 
 
@@ -169,6 +186,7 @@ def update_user(user_id):
 @jwt_required()
 @role_required("admin")  # Admin-only
 def get_all_users():
+    current_app.logger.info("Get all users endpoint called")
     users = user_services.get_all_users()
     return (
         jsonify(
@@ -192,6 +210,7 @@ def get_all_users():
 @jwt_required()
 @role_required("vendor", "customer", "admin")
 def delete_user(user_id):
+    current_app.logger.info(f"Delete user endpoint called for user_id: {user_id}")
     current_user_id = int(get_jwt_identity())
     current_user_role = get_jwt().get("role")
 
@@ -200,14 +219,17 @@ def delete_user(user_id):
     )
 
     if error:
+        current_app.logger.error(f"Delete user {user_id} failed: {error}")
         return jsonify({"msg": error}), 403 if error == "Unauthorized" else 404
 
+    current_app.logger.info(f"User {user_id} deleted by user {current_user_id}")
     return jsonify(response_message), 200
 
 
 @auth_bp.route("/users", methods=["GET"])
 @jwt_required()
 def get_all_non_admin_users():
+    current_app.logger.info("Get all non-admin users endpoint called")
     users = user_services.get_all_non_admin_users()
     return (
         jsonify(
@@ -229,16 +251,19 @@ def get_all_non_admin_users():
 @auth_bp.route("/users/<int:user_id>", methods=["GET"])
 @jwt_required()
 def get_user_by_id(user_id):
+    current_app.logger.info(f"Get user by id endpoint called for user_id: {user_id}")
     current_user_role = get_jwt().get("role")
 
     user, error = user_services.get_user_by_id_with_admin_check(
         user_id, current_user_role
     )
     if error:
+        current_app.logger.warning(f"Get user by id {user_id} failed: {error}")
         return jsonify({"msg": error}), (
             403 if error == "Unauthorized to view admin accounts" else 404
         )
 
+    current_app.logger.info(f"User {user_id} info returned")
     return (
         jsonify(
             {
@@ -257,6 +282,7 @@ def get_user_by_id(user_id):
 @jwt_required()
 @role_required("admin")
 def get_admin_users():
+    current_app.logger.info("Get admin users endpoint called")
     users = user_services.get_admin_users()
     return (
         jsonify(
@@ -279,12 +305,15 @@ def get_admin_users():
 @jwt_required()
 @role_required("customer", "vendor")
 def get_my_balance():
+    current_app.logger.info("Get my balance endpoint called")
     current_user_id = int(get_jwt_identity())
 
     user = user_services.get_user_by_id(current_user_id)
     if not user:
+        current_app.logger.warning(f"Get my balance: User {current_user_id} not found")
         return jsonify({"msg": "User not found"}), 404
 
+    current_app.logger.info(f"Balance for user {current_user_id} returned")
     return jsonify({"balance": float(user.balance or 0.0)}), 200
 
 
@@ -293,15 +322,19 @@ def get_my_balance():
 @jwt_required()
 @role_required("customer", "vendor")
 def update_my_balance():
+    current_app.logger.info("Update my balance endpoint called")
     if not request.is_json:
+        current_app.logger.warning("Update my balance: Invalid content type")
         return jsonify({"msg": "Invalid content type"}), 400
     data = request.get_json()
     new_balance = data.get("balance")
 
     if new_balance is None:
+        current_app.logger.warning("Update my balance: Missing balance value")
         return jsonify({"msg": "Missing balance value"}), 400
 
     if new_balance < 0:
+        current_app.logger.warning("Update my balance: Balance cannot be negative")
         return jsonify({"msg": "Balance cannot be negative"}), 400
 
     current_user_id = int(get_jwt_identity())
@@ -311,8 +344,10 @@ def update_my_balance():
     )
 
     if error:
+        current_app.logger.error(f"Update my balance failed for user {current_user_id}: {error}")
         return jsonify({"msg": error}), 404
 
+    current_app.logger.info(f"Balance for user {current_user_id} updated to {new_balance}")
     return (
         jsonify(
             {
