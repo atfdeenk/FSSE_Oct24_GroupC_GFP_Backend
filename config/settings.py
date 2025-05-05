@@ -8,7 +8,7 @@ from instance.database import init_db, db
 from shared.limiter import limiter  
 from flask import jsonify
 from werkzeug.exceptions import HTTPException
-
+from utils.logger import setup_logger
 
 
 # Import blueprints
@@ -44,6 +44,13 @@ def create_app(config_module=None):
     # Setup extensions
     jwt = JWTManager(app)
     init_db(app)
+
+    
+
+
+
+
+    setup_logger(app)
 
     # Register error handlers
     register_error_handlers(app, jwt)
@@ -86,5 +93,8 @@ def create_app(config_module=None):
             os.path.join(os.path.dirname(__file__), "..", "uploads")
         )
         return send_from_directory(uploads_path, filename)
+
+   
+
 
     return app

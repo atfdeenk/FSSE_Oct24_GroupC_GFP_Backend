@@ -20,6 +20,8 @@ dependencies = [
     "flask-cors>=5.0.1",
     "marshmallow-sqlalchemy>=1.4.2",
     "python-dotenv>=1.1.0",
+    "flask-limiter>=3.12",
 ]
+
 [tool.taskipy.tasks]
 fr = "flask --app app run --port 8000 --reload --debug"
