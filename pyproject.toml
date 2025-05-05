@@ -14,9 +14,14 @@ dependencies = [
     "psycopg2-binary>=2.9.10",
     "pytest>=8.3.5",
     "python-dotenv>=1.1.0",
+<<<<<<< HEAD
     "redis>=6.0.0",
     "flask-limiter>=3.12",
     "taskipy>=1.14.1",
+=======
+    "flask-limiter>=3.12",
+>>>>>>> 36f69b4 (feat:add logger)
 ]
+
 [tool.taskipy.tasks]
 fr = "flask --app app run --port 8000 --reload --debug"
