@@ -9,6 +9,7 @@ from repo.user_repo import get_user_by_id
 from flask import jsonify
 from instance.database import db
 from utils.security import hash_password
+from decimal import Decimal
 
 from models.user import RoleType
 
@@ -54,17 +55,22 @@ def update_user(user_id, data, current_user_id, current_user_role):
     if not user:
         return None, "User not found"
 
-    # Only the user themselves or an admin can update
     if current_user_id != user.id and current_user_role != "admin":
         return None, "Unauthorized"
 
-    # Prevent email/username/role overwrite unless admin
-    protected_fields = ["role", "email", "username"]
+    protected_fields = ["role", "username"]
     if current_user_role != "admin":
         for field in protected_fields:
             data.pop(field, None)
 
     updated_user = user_repo.update_user(user, data)
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return None, "Failed to update user"
+
     return updated_user, None
 
 
@@ -180,7 +186,12 @@ def update_my_balance_service(user_id: int, new_balance: float):
     if not user:
         return None, "User not found"
 
-    from decimal import Decimal
-
     updated_user = user_repo.update_user_balance(user_id, Decimal(str(new_balance)))
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return None, "Failed to update balance"
+
     return updated_user, None

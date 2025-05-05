@@ -42,10 +42,8 @@ def init_db(app):
     with app.app_context():
         db.create_all()
 
-        # Generate random suffix to prevent UNIQUE constraint violations
         suffix = random_string()
 
-        # Seed vendor user
         vendor = Users(
             username=f"vendoruser_{suffix}",
             first_name="Test",
@@ -63,10 +61,10 @@ def init_db(app):
             role="vendor",
             bank_account="1234567890",
             bank_name="BNI",
+            account_number=f"ACCT{random.randint(10000000,99999999)}",
             is_active=True,
         )
 
-        # Seed customer user
         customer = Users(
             username=f"customeruser_{suffix}",
             first_name="Test",
@@ -84,10 +82,10 @@ def init_db(app):
             role="customer",
             bank_account="9876543210",
             bank_name="BCA",
+            account_number=f"ACCT{random.randint(10000000,99999999)}",
             is_active=True,
         )
 
-        # Seed admin user
         admin = Users(
             username=f"adminuser_{suffix}",
             first_name="Admin",
@@ -105,13 +103,13 @@ def init_db(app):
             role="admin",
             bank_account="1234567890",
             bank_name="BNI",
+            account_number=f"ACCT{random.randint(10000000,99999999)}",
             is_active=True,
         )
 
         db.session.add_all([vendor, customer, admin])
         db.session.commit()
 
-        # Make user IDs available for other fixtures
         app.test_vendor_id = vendor.id
         app.test_customer_id = customer.id
         app.test_admin_id = admin.id
@@ -128,13 +126,12 @@ def init_db(app):
 
         yield
 
-        db.session.remove()  # Close and remove session to avoid locked DB
+        db.session.remove()
         db.drop_all()
 
 
 @pytest.fixture
 def client(app, init_db):
-    """Create a test client for the Flask application."""
     return app.test_client()
 
 
@@ -210,6 +207,7 @@ def new_user(app):
             role="customer",
             bank_account="1234567890",
             bank_name="Test Bank",
+            account_number=f"ACCT{random.randint(10000000,99999999)}",
             is_active=True,
         )
         db.session.add(user)

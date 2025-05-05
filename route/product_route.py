@@ -11,6 +11,7 @@ from services.product_services import (
 )
 import services.product_services as product_services
 from marshmallow import Schema, fields, ValidationError
+from shared.limiter import limiter
 
 product_bp = Blueprint("product_bp", __name__)
 
@@ -36,6 +37,7 @@ product_schema = ProductSchema()
 
 
 @product_bp.route("/products", methods=["GET"])
+@limiter.limit("60 per minute")
 def get_all_products():
     search = request.args.get("search")
     category_id = request.args.get("category_id", type=int)
@@ -82,6 +84,7 @@ def get_product(product_id):
 
 @product_bp.route("/products", methods=["POST"])
 @jwt_required()
+@limiter.limit("20 per minute")
 @role_required("vendor")
 def create_product():
     if not request.is_json:

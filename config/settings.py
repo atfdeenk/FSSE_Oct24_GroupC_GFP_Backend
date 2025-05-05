@@ -1,10 +1,19 @@
-# config/settings.py
 import os
+import redis
+import logging
+import sys
+from shared.limiter import limiter
+from shared.redis_check import check_redis_connection
+
 from flask import Flask, send_from_directory, current_app
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 import models  # noqa: F401
 from instance.database import init_db, db
+
+from flask import jsonify
+from werkzeug.exceptions import HTTPException
+
 
 # Import blueprints
 from route.index import index_router
@@ -26,6 +35,17 @@ def create_app(config_module=None):
     """Create a Flask application instance."""
     app = Flask(__name__)
 
+    # Configure app logger to output to console at INFO level
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.INFO)
+    formatter = logging.Formatter(
+        "[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
+    )
+    handler.setFormatter(formatter)
+    if not app.logger.hasHandlers():
+        app.logger.addHandler(handler)
+    app.logger.setLevel(logging.INFO)
+
     # Determine configuration
     config_path = config_module or os.getenv(
         "CONFIG_MODULE", "config.config.LocalConfig"
@@ -42,6 +62,24 @@ def create_app(config_module=None):
 
     # Register error handlers
     register_error_handlers(app, jwt)
+
+    # Setup Flask-Limiter (in-memory, no Redis)
+    limiter.init_app(app)
+
+    # Check if Redis URL is set and if Redis is reachable
+    check_redis_connection(app)
+
+    @app.errorhandler(429)
+    def ratelimit_handler(e: HTTPException):
+        return (
+            jsonify(
+                {
+                    "msg": "Too many login attempts. Please wait and try again shortly.",
+                    "limit": str(e.description),
+                }
+            ),
+            429,
+        )
 
     # Teardown after each request
     @app.teardown_appcontext
