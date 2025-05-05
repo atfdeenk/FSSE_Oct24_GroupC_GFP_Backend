@@ -20,7 +20,8 @@ uv add flask-cors           # for frontend-backend integration
 uv add marshmallow-sqlalchemy # for data validation
 uv add marshmallow           # for data validation
 uv export > requirements.txt  # export to requirements.txt
-
+uv add Flask-Limiter        # for rate limiting
+uv add redis                # for caching
 uv remove marshmallow-sqlalchemy           # remove marshmallow-sqlalchemy
 
 ```
