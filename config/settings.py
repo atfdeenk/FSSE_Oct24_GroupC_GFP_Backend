@@ -5,6 +5,11 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 import models  # noqa: F401
 from instance.database import init_db, db
+from shared.limiter import limiter  
+from flask import jsonify
+from werkzeug.exceptions import HTTPException
+
+
 
 # Import blueprints
 from route.index import index_router
@@ -42,6 +47,17 @@ def create_app(config_module=None):
 
     # Register error handlers
     register_error_handlers(app, jwt)
+
+    # Setup Flask-Limiter (in-memory, no Redis)
+    limiter.init_app(app)
+
+    @app.errorhandler(429)
+    def ratelimit_handler(e: HTTPException):
+        return jsonify({
+            "msg": "Too many login attempts. Please wait and try again shortly.",
+            "limit": str(e.description)
+        }), 429
+
 
     # Teardown after each request
     @app.teardown_appcontext

@@ -11,8 +11,14 @@ from services import user_services
 from services.user_services import get_me_service
 from shared.auth import role_required
 from marshmallow import Schema, fields, ValidationError
+from shared.limiter import limiter
+
+
 
 auth_bp = Blueprint("auth_bp", __name__)
+
+
+
 
 
 # Define input schema for user registration and update
@@ -40,6 +46,7 @@ user_schema = UserSchema(partial=True)  # partial=True allows partial updates
 
 # Public: anyone can register
 @auth_bp.route("/register", methods=["POST"])
+@limiter.limit("5 per minute")
 def register():
     if not request.is_json:
         return jsonify({"msg": "Invalid content type"}), 400
@@ -61,6 +68,7 @@ def register():
 
 # Public: anyone can log in
 @auth_bp.route("/login", methods=["POST"])
+@limiter.limit("5 per minute")
 def login():
     overall_start = time.perf_counter()
 
@@ -131,6 +139,7 @@ def me():
 
 # Private: Only the user themselves or admin can update a user
 @auth_bp.route("/users/<int:user_id>", methods=["PUT", "PATCH"])
+@limiter.limit("10 per minute")
 @jwt_required()
 @role_required("vendor", "customer", "admin")  # Optional: restrict to known roles
 def update_user(user_id):
@@ -280,6 +289,7 @@ def get_my_balance():
 
 
 @auth_bp.route("/users/me/balance", methods=["PATCH"])
+@limiter.limit("5 per minute")
 @jwt_required()
 @role_required("customer", "vendor")
 def update_my_balance():
