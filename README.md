@@ -20,13 +20,17 @@ uv add flask-cors           # for frontend-backend integration
 uv add marshmallow-sqlalchemy # for data validation
 uv add marshmallow           # for data validation
 uv export > requirements.txt  # export to requirements.txt
-
+uv add Flask-Limiter        # for rate limiting
+uv add redis                # for caching
 uv remove marshmallow-sqlalchemy           # remove marshmallow-sqlalchemy
 
 ```
 
+```txt
 gunicorn==21.2.0 \
- --hash=sha256:3213aa5e8c24949e792bcacfc176fef362e7aac80b76c56f6b5122bf350722f0
+    --hash=sha256:3213aa5e8c24949e792bcacfc176fef362e7aac80b76c56f6b5122bf350722f0
+
+```
 
 ```toml
     [tool.taskipy.tasks]
@@ -51,6 +55,34 @@ uv run pytest -s -v
 uv run flask db init
 uv run flask db migrate -m "Initial migration"
 uv run flask db upgrade
+```
+
+```toml
+[project]
+name = "bumibrew"
+version = "0.1.0"
+description = "Sustainable market backend built with Flask"
+readme = "README.md"
+requires-python = ">=3.11"
+
+dependencies = [
+    "flask",
+    "flask-sqlalchemy",
+    "flask-jwt-extended",
+    "flask-migrate",
+    "sqlalchemy",
+    "psycopg2-binary",
+    "pytest",
+    "pytest-cov",
+    "black",
+    "isort",
+    "taskipy>=1.14.1",
+    "flask-cors>=5.0.1",
+    "marshmallow-sqlalchemy>=1.4.2",
+    "python-dotenv>=1.1.0",
+]
+[tool.taskipy.tasks]
+fr = "flask --app app run --port 8000 --reload --debug"
 ```
 
 ### 5. Flask App Directory Structure

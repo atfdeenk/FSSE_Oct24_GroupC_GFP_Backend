@@ -72,18 +72,17 @@ def get_all_products_filtered(
     sort_by="created_at",
     sort_order="desc",
 ):
-    query = Products.query.filter(Products.is_approved == True)
+    query = Products.query.options(
+        joinedload(Products.categories_linked),
+        joinedload(Products.vendor)
+    ).filter(Products.is_approved == True)
 
     if search:
-        # ✅ Join Users table first
         query = query.join(Users, Products.vendor_id == Users.id)
-
         query = query.filter(
             or_(
                 Products.name.ilike(f"%{search}%"),
-                Users.city.ilike(
-                    f"%{search}%"
-                ),  # ✅ search on Users.city not Products.location
+                Users.city.ilike(f"%{search}%"),
             )
         )
 
@@ -92,24 +91,18 @@ def get_all_products_filtered(
             ProductCategories.category_id == category_id
         )
 
-    # Sorting logic
     if sort_by == "price":
         sort_column = cast(Products.price, Numeric)
     elif sort_by == "name":
         sort_column = Products.name
-    elif sort_by == "created_at":
-        sort_column = Products.created_at
     else:
-        sort_column = Products.created_at  # Fallback
+        sort_column = Products.created_at
 
     order_func = asc if sort_order.lower() == "asc" else desc
     query = query.order_by(order_func(sort_column))
 
     total = query.count()
     products = query.offset((page - 1) * limit).limit(limit).all()
-
-    print("[DEBUG] Sort By:", sort_by)
-    print("[DEBUG] Sort Order:", sort_order)
 
     return products, total
 
