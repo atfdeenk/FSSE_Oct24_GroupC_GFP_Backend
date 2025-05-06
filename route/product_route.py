@@ -164,8 +164,9 @@ def approve_product(product_id):
     try:
         result = product_services.approve_product_by_id(product_id)
         current_app.logger.info("Product approved: %s", product_id)
-        return {"message": "Product approved"}, 200
+        return result, 200  # ✅ Return full product info
     except ValueError as e:
         current_app.logger.warning("Product approve failed: %s (id=%s)", str(e), product_id)
         return {"message": str(e)}, 404
+
 
