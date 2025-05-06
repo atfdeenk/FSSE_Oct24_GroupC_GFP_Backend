@@ -299,3 +299,24 @@ def test_create_product_invalid_price_format(client, vendor_token):
     res = client.post("/products", json=payload, headers=headers)
     assert res.status_code == 400
 
+def test_approve_product_as_admin(client, admin_token, vendor_token):
+    headers = {"Authorization": f"Bearer {vendor_token}"}
+    payload = {
+        "name": "Need Approval",
+        "slug": "need-approval",
+        "description": "Waiting for admin approval",
+        "currency": "IDR",
+        "price": "12345.00",
+        "stock_quantity": 3,
+        "unit_quantity": "pcs",
+        "image_url": "http://example.com/approve.jpg"
+    }
+
+    res = client.post("/products", json=payload, headers=headers)
+    product_id = res.get_json()["id"]
+
+    # Approve with admin
+    headers_admin = {"Authorization": f"Bearer {admin_token}"}
+    approve_res = client.patch(f"/products/{product_id}/approve", headers=headers_admin)
+    assert approve_res.status_code == 200
+    assert approve_res.get_json()["is_approved"] is True
