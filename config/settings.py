@@ -65,11 +65,6 @@ def create_app(config_module=None):
     jwt = JWTManager(app)
     init_db(app)
 
-    
-
-
-
-
     setup_logger(app)
 
     # Register error handlers
@@ -120,8 +115,5 @@ def create_app(config_module=None):
             os.path.join(os.path.dirname(__file__), "..", "uploads")
         )
         return send_from_directory(uploads_path, filename)
-
-   
-
 
     return app
