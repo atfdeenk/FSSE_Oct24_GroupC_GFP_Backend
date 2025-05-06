@@ -71,11 +71,32 @@ def get_all_products_filtered(
     limit=10,
     sort_by="created_at",
     sort_order="desc",
+    include_unapproved=False,
+    current_user_id=None,
+    current_user_role=None,
 ):
+
     query = Products.query.options(
         joinedload(Products.categories_linked),
         joinedload(Products.vendor)
-    ).filter(Products.is_approved == True)
+    )
+
+    if not include_unapproved:
+        query = query.filter(Products.is_approved == True)
+    elif current_user_role == "vendor":
+        query = query.filter(
+        (Products.is_approved == True) |
+        (Products.vendor_id == current_user_id)
+    )
+    elif current_user_role == "admin":
+        # no filtering → admin sees all
+        pass
+    else:
+        # fallback: treat as public
+        query = query.filter(Products.is_approved == True)
+
+# Admin: no filter
+
 
     if search:
         query = query.join(Users, Products.vendor_id == Users.id)
