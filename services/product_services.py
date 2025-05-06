@@ -1,5 +1,6 @@
-from flask import current_app, abort
-from flask_jwt_extended import get_jwt
+from flask import current_app, abort, request
+from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity, get_jwt
+from flask_jwt_extended.exceptions import NoAuthorizationError
 from models.product import Products
 from instance.database import db
 from repo import product_repo
@@ -45,6 +46,8 @@ def serialize_product(product: Products) -> dict:
         ),  # ✅ ADD THIS LINE
         "created_at": product.created_at.isoformat() if product.created_at else None,
         "updated_at": product.updated_at.isoformat() if product.updated_at else None,
+        "is_approved": product.is_approved,  # ✅ Expose for frontend
+
         "categories": [
             {
                 "id": category.id,
@@ -64,7 +67,25 @@ def get_all_serialized_products(
     sort_by="created_at",
     sort_order="desc",
 ):
-    print("[CACHE MISS] Fetching products from DB...")  # ✅ Only prints on cache miss
+    print("[CACHE MISS] Fetching products from DB...")
+
+    # Allow JWT if available
+    try:
+        verify_jwt_in_request()
+        claims = get_jwt()
+        user_id = get_jwt_identity()
+    except NoAuthorizationError:
+        claims = {}
+        user_id = None
+
+    role = claims.get("role") if claims else None  # ✅ ADD THIS LINE
+
+
+    include_unapproved = request.args.get("include_unapproved") == "true"
+
+    # ✅ Only allow include_unapproved for admin or vendor
+    if include_unapproved and role not in ["admin", "vendor"]:
+        include_unapproved = False
 
     products, total = product_repo.get_all_products_filtered(
         search=search,
@@ -73,13 +94,18 @@ def get_all_serialized_products(
         limit=limit,
         sort_by=sort_by,
         sort_order=sort_order,
+        include_unapproved=include_unapproved,
+        current_user_id=user_id,
+        current_user_role=role,
     )
+
     return {
         "products": [serialize_product(p) for p in products],
         "total": total,
         "page": page,
         "limit": limit,
     }
+
 
 
 def get_paginated_serialized_products(page: int, limit: int):
