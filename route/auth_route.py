@@ -14,11 +14,7 @@ from marshmallow import Schema, fields, ValidationError
 from shared.limiter import limiter
 
 
-
 auth_bp = Blueprint("auth_bp", __name__)
-
-
-
 
 
 # Define input schema for user registration and update
@@ -66,7 +62,9 @@ def register():
     if not user:
         current_app.logger.error("Register: User registration failed")
         return jsonify({"msg": "User registration failed"}), 400
-    current_app.logger.info(f"Register: User {user.username if user else 'unknown'} registered successfully")
+    current_app.logger.info(
+        f"Register: User {user.username if user else 'unknown'} registered successfully"
+    )
     return jsonify({"msg": "User registered successfully"}), 201
 
 
@@ -164,12 +162,16 @@ def update_user(user_id):
     try:
         validated_data = user_schema.load(data, partial=True)
     except ValidationError as err:
-        current_app.logger.warning(f"Update user {user_id}: Validation error - {err.messages}")
+        current_app.logger.warning(
+            f"Update user {user_id}: Validation error - {err.messages}"
+        )
         return jsonify({"msg": "Validation error", "errors": err.messages}), 400
 
     current_user_id = int(get_jwt_identity())
     current_user_role = get_jwt().get("role")
-    current_app.logger.info(f"User {current_user_id} ({current_user_role}) attempts to update user {user_id}")
+    current_app.logger.info(
+        f"User {current_user_id} ({current_user_role}) attempts to update user {user_id}"
+    )
     user, error = user_services.update_user(
         user_id, validated_data, current_user_id, current_user_role
     )
@@ -178,7 +180,9 @@ def update_user(user_id):
         current_app.logger.error(f"Update user {user_id} failed: {error}")
         return jsonify({"msg": error}), 403 if error == "Unauthorized" else 404
 
-    current_app.logger.info(f"User {user_id} updated successfully by user {current_user_id}")
+    current_app.logger.info(
+        f"User {user_id} updated successfully by user {current_user_id}"
+    )
     return jsonify({"msg": "User updated successfully"}), 200
 
 
@@ -344,10 +348,14 @@ def update_my_balance():
     )
 
     if error:
-        current_app.logger.error(f"Update my balance failed for user {current_user_id}: {error}")
+        current_app.logger.error(
+            f"Update my balance failed for user {current_user_id}: {error}"
+        )
         return jsonify({"msg": error}), 404
 
-    current_app.logger.info(f"Balance for user {current_user_id} updated to {new_balance}")
+    current_app.logger.info(
+        f"Balance for user {current_user_id} updated to {new_balance}"
+    )
     return (
         jsonify(
             {
