@@ -1,6 +1,8 @@
 from repo import feedback_repo
 from models.user import Users  # Needed for email to user lookup
 from instance.database import db
+from shared.cache import cache
+
 
 
 def create_feedback(data, current_user_id):
@@ -32,6 +34,10 @@ def create_feedback(data, current_user_id):
     try:
         feedback = feedback_repo.create_feedback(data)
         db.session.commit()
+
+    # ✅ Add these below existing lines
+     
+
     except Exception as e:
         db.session.rollback()
         print(f"Exception creating feedback: {e}, data: {data}")
@@ -39,7 +45,7 @@ def create_feedback(data, current_user_id):
 
     return feedback, None
 
-
+@cache.cached(timeout=60)
 def get_feedback_by_product(product_id):
     return feedback_repo.get_feedback_by_product(product_id)
 
@@ -49,6 +55,7 @@ def get_feedback_by_user(user_id):
 
 
 # ✅ Fix here: accept page and per_page
+
 def get_all_feedback(page=1, per_page=10):
     return feedback_repo.get_all_feedback(page=page, per_page=per_page)
 
@@ -62,6 +69,8 @@ def delete_feedback(feedback_id, current_user_id):
         return None, error
     try:
         db.session.commit()
+        
+
         return feedback, None
     except Exception:
         db.session.rollback()
