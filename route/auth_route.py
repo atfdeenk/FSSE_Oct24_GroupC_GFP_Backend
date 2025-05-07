@@ -321,47 +321,65 @@ def get_my_balance():
     return jsonify({"balance": float(user.balance or 0.0)}), 200
 
 
-@auth_bp.route("/users/me/balance", methods=["PATCH"])
+@auth_bp.route("/users/<int:user_id>/balance", methods=["PATCH"])
 @limiter.limit("5 per minute")
 @jwt_required()
-@role_required("customer", "vendor")
-def update_my_balance():
-    current_app.logger.info("Update my balance endpoint called")
-    if not request.is_json:
-        current_app.logger.warning("Update my balance: Invalid content type")
-        return jsonify({"msg": "Invalid content type"}), 400
-    data = request.get_json()
-    new_balance = data.get("balance")
+@role_required("admin")
+def admin_update_user_balance(user_id):
+    current_app.logger.info(f"Admin update balance for user_id: {user_id} called")
 
-    if new_balance is None:
-        current_app.logger.warning("Update my balance: Missing balance value")
+    if not request.is_json:
+        return jsonify({"msg": "Invalid content type"}), 400
+
+    data = request.get_json()
+    added_amount = data.get("balance")
+
+    if added_amount is None:
         return jsonify({"msg": "Missing balance value"}), 400
 
-    if new_balance < 0:
-        current_app.logger.warning("Update my balance: Balance cannot be negative")
+    if added_amount < 0:
         return jsonify({"msg": "Balance cannot be negative"}), 400
 
-    current_user_id = int(get_jwt_identity())
-
-    updated_user, error = user_services.update_my_balance_service(
-        current_user_id, new_balance
-    )
+    updated_user, error = user_services.update_my_balance_service(user_id, added_amount)
 
     if error:
-        current_app.logger.error(
-            f"Update my balance failed for user {current_user_id}: {error}"
-        )
         return jsonify({"msg": error}), 404
 
-    current_app.logger.info(
-        f"Balance for user {current_user_id} updated to {new_balance}"
-    )
-    return (
-        jsonify(
-            {
-                "msg": "Balance updated successfully",
-                "balance": float(updated_user.balance),
-            }
-        ),
-        200,
-    )
+    # ✅ Mark top-up request as approved in CSV
+    user_services.mark_topup_request_as_approved(user_id, added_amount)
+
+    return jsonify({
+        "msg": f"Balance updated for user {user_id}",
+        "balance": float(updated_user.balance)
+    }), 200
+
+
+
+@auth_bp.route("/users/me/request-topup", methods=["POST"])
+@jwt_required()
+@role_required("customer", "vendor")
+def request_topup():
+    current_user_id = int(get_jwt_identity())
+    data = request.get_json()
+    amount = data.get("amount")
+
+    result, error = user_services.request_topup_service(current_user_id, amount)
+
+    if error:
+        return jsonify({"msg": error}), 400
+
+    return jsonify({
+        "msg": "Top-up request submitted. Please wait for admin approval.",
+        "requested": result
+    }), 200
+
+@auth_bp.route("/topup-requests", methods=["GET"])
+@jwt_required()
+@role_required("admin")
+def view_topup_requests():
+    logs, error = user_services.get_topup_requests_service()
+
+    if error:
+        return jsonify({"msg": error}), 500
+
+    return jsonify({"requests": logs}), 200
