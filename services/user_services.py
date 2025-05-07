@@ -191,7 +191,7 @@ def update_my_balance_service(user_id: int, added_amount: float):
     if not user:
         return None, "User not found"
 
-    # ✅ ADD to current balance, don't overwrite
+    
     current_balance = user.balance or Decimal("0.00")
     new_balance = current_balance + Decimal(str(added_amount))
 
@@ -211,50 +211,68 @@ def request_topup_service(user_id: int, amount: float):
     if amount <= 0:
         return None, "Invalid top-up amount"
 
+    # Read current lines to determine ID
+    try:
+        with open(globals()["CSV_TOPUP_FILE"], "r") as file:
+            request_id = sum(1 for _ in file)
+    except FileNotFoundError:
+        request_id = 0
+
     log_entry = [str(datetime.utcnow()), user_id, float(amount), "pending"]
 
     try:
-        with open(CSV_TOPUP_FILE, "a", newline="") as file:
+        with open(globals()["CSV_TOPUP_FILE"], "a", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(log_entry)
     except Exception as e:
         return None, f"Failed to save top-up request: {str(e)}"
 
-    return {"requested_by": user_id, "amount": float(amount)}, None
+    return {"request_id": request_id, "requested_by": user_id, "amount": float(amount)}, None
+
 
 def get_topup_requests_service():
     try:
         with open(CSV_TOPUP_FILE, "r") as file:
             reader = csv.reader(file)
             logs = [
-                {"timestamp": row[0], "user_id": int(row[1]), "amount": float(row[2]), "status": row[3]}
-                for row in reader
+                {
+                    "request_id": idx,  
+                    "timestamp": row[0],
+                    "user_id": int(row[1]),
+                    "amount": float(row[2]),
+                    "status": row[3]
+                }
+                for idx, row in enumerate(reader)
             ]
         return logs, None
     except FileNotFoundError:
         return [], None
     except Exception as e:
         return None, f"Failed to read top-up requests: {str(e)}"
-    
 
-def mark_topup_request_as_approved(user_id: int, amount: float):
+
+
+def mark_topup_request_status(request_id: int, status: str):
     updated = False
+    user_id = None
+    amount = None
+
     temp_file = NamedTemporaryFile(mode='w', delete=False, newline='')
-    with open(CSV_TOPUP_FILE, "r", newline="") as csvfile, temp_file:
-        reader = csv.reader(csvfile)
-        writer = csv.writer(temp_file)
 
-        for row in reader:
-            # Match on user_id, amount, and status pending
-            if int(row[1]) == user_id and float(row[2]) == amount and row[3] == "pending":
-                row[3] = "approved"
-                updated = True
-            writer.writerow(row)
+    try:
+        with open(globals()["CSV_TOPUP_FILE"], "r", newline="") as csvfile, temp_file:
+            reader = csv.reader(csvfile)
+            writer = csv.writer(temp_file)
 
-    # Replace original with updated file
-    shutil.move(temp_file.name, CSV_TOPUP_FILE)
+            for i, row in enumerate(reader):
+                if i == request_id and row[3] == "pending":
+                    row[3] = status
+                    updated = True
+                    user_id = int(row[1])
+                    amount = float(row[2])
+                writer.writerow(row)
 
-    return updated
-
-
-
+        shutil.move(temp_file.name, globals()["CSV_TOPUP_FILE"])
+        return updated, user_id, amount
+    except Exception:
+        return False, None, None

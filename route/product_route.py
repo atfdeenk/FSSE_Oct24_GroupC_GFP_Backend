@@ -169,4 +169,16 @@ def approve_product(product_id):
         current_app.logger.warning("Product approve failed: %s (id=%s)", str(e), product_id)
         return {"message": str(e)}, 404
 
+@product_bp.route("/products/<int:product_id>/reject", methods=["PATCH"])
+@jwt_required()
+@role_required("admin")
+def reject_product(product_id):
+    current_app.logger.info("PATCH /products/%s/reject called by user: %s", product_id, get_jwt_identity())
+    try:
+        result = product_services.reject_product_by_id(product_id)
+        current_app.logger.info("Product rejected: %s", product_id)
+        return result, 200
+    except ValueError as e:
+        current_app.logger.warning("Product reject failed: %s (id=%s)", str(e), product_id)
+        return {"message": str(e)}, 404
 
