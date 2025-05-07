@@ -270,3 +270,11 @@ Contributions are welcome! Please open issues or submit pull requests for improv
 ## 11. License
 
 Specify your project license here (e.g., MIT License).
+
+---
+
+## 12. API Documentation
+
+The detailed API endpoint documentation for BumiBrew is available at:
+
+[API Endpoint Documentation - BumiBrew](https://pointed-perigee-309.notion.site/API-ENDPOINT-DOCUMENTATION-BumiBrew-1e165fc7cbc880fa99c6fba6997f97fd)
