@@ -296,34 +296,26 @@ def test_vendor_get_balance(client, vendor_token):
     assert isinstance(response.json["balance"], float)
 
 
-def test_customer_patch_balance(client, customer_token):
-    headers = {"Authorization": f"Bearer {customer_token}"}
-    new_balance = 100000.0
+def test_admin_can_topup_balance_for_customer(client, admin_token, app):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    customer_id = app.test_customer_id
+    topup_amount = 150000.0
 
     response = client.patch(
-        "/users/me/balance", json={"balance": new_balance}, headers=headers
+        f"/users/{customer_id}/balance", json={"balance": topup_amount}, headers=headers
     )
 
     assert response.status_code == 200
-    assert response.json["balance"] == new_balance
+    assert "balance" in response.json
+    assert response.json["balance"] >= topup_amount
 
 
-def test_vendor_patch_balance(client, vendor_token):
-    headers = {"Authorization": f"Bearer {vendor_token}"}
-    new_balance = 50000.0
+def test_admin_topup_negative_balance(client, admin_token, app):
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    customer_id = app.test_customer_id
 
     response = client.patch(
-        "/users/me/balance", json={"balance": new_balance}, headers=headers
-    )
-
-    assert response.status_code == 200
-    assert response.json["balance"] == new_balance
-
-
-def test_patch_negative_balance(client, customer_token):
-    headers = {"Authorization": f"Bearer {customer_token}"}
-    response = client.patch(
-        "/users/me/balance", json={"balance": -1000}, headers=headers
+        f"/users/{customer_id}/balance", json={"balance": -5000}, headers=headers
     )
 
     assert response.status_code == 400
