@@ -84,7 +84,7 @@ def get_all_serialized_products(
     include_unapproved = request.args.get("include_unapproved") == "true"
 
     # ✅ Only allow include_unapproved for admin or vendor
-    if include_unapproved and role not in ["admin", "vendor"]:
+    if include_unapproved and role not in ["admin"]:
         include_unapproved = False
 
     products, total = product_repo.get_all_products_filtered(

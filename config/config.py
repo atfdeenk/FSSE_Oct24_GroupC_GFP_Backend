@@ -45,3 +45,6 @@ class TestingConfig(BaseConfig):
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///test.db"
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "testing-secret-key")
+    RATELIMIT_ENABLED = (
+        False  # Disable rate limiting in tests for speed up testing process
+    )
