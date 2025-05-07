@@ -84,8 +84,8 @@ def test_get_cart_items(client, customer_token, seed_product):
     )
     assert response.status_code == 200
     data = response.get_json()
-    assert isinstance(data, list)
-    assert data[0]["product_id"] == 1
+    assert isinstance(data["items"], list)
+    assert data["items"][0]["product_id"] == 1
 
 
 def test_update_cart_item_quantity(client, app, customer_token, seed_product):
@@ -127,4 +127,5 @@ def test_remove_cart_item(client, app, customer_token, seed_product):
             headers={"Authorization": f"Bearer {customer_token}"},
         )
         assert response.status_code == 200
-        assert response.get_json()["message"] == "Item removed"
+        assert response.get_json()["message"] == "Item removed from cart successfully."
+

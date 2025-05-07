@@ -8,15 +8,21 @@ from flask_jwt_extended import get_jwt_identity
 from repo.user_repo import get_user_by_id
 from flask import jsonify
 from instance.database import db
+from utils.security import hash_password
+from decimal import Decimal
+import csv
+from tempfile import NamedTemporaryFile
+import shutil
+from datetime import datetime
 
 from models.user import RoleType
+
+CSV_TOPUP_FILE = "logs/topup_requests.csv"
 
 
 def create_user(data):
     try:
-        # ✅ Hash the password
-        hashed_password = generate_password_hash(data["password"])
-        data["password_hash"] = hashed_password
+        data["password_hash"] = hash_password(data["password"])
         del data["password"]
 
         # ✅ Convert role string to Enum
@@ -55,17 +61,22 @@ def update_user(user_id, data, current_user_id, current_user_role):
     if not user:
         return None, "User not found"
 
-    # Only the user themselves or an admin can update
     if current_user_id != user.id and current_user_role != "admin":
         return None, "Unauthorized"
 
-    # Prevent email/username/role overwrite unless admin
-    protected_fields = ["role", "email", "username"]
+    protected_fields = ["role", "username"]
     if current_user_role != "admin":
         for field in protected_fields:
             data.pop(field, None)
 
     updated_user = user_repo.update_user(user, data)
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return None, "Failed to update user"
+
     return updated_user, None
 
 
@@ -175,13 +186,75 @@ def get_user_balance_service(
     return user.balance or 0.0, None
 
 
-def update_my_balance_service(user_id: int, new_balance: float):
+def update_my_balance_service(user_id: int, added_amount: float):
     user = user_repo.get_user_by_id(user_id)
-
     if not user:
         return None, "User not found"
 
-    from decimal import Decimal
+    # ✅ ADD to current balance, don't overwrite
+    current_balance = user.balance or Decimal("0.00")
+    new_balance = current_balance + Decimal(str(added_amount))
 
-    updated_user = user_repo.update_user_balance(user_id, Decimal(str(new_balance)))
+    updated_user = user_repo.update_user_balance(user_id, new_balance)
+
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return None, "Failed to update balance"
+
     return updated_user, None
+
+
+
+def request_topup_service(user_id: int, amount: float):
+    if amount <= 0:
+        return None, "Invalid top-up amount"
+
+    log_entry = [str(datetime.utcnow()), user_id, float(amount), "pending"]
+
+    try:
+        with open(CSV_TOPUP_FILE, "a", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(log_entry)
+    except Exception as e:
+        return None, f"Failed to save top-up request: {str(e)}"
+
+    return {"requested_by": user_id, "amount": float(amount)}, None
+
+def get_topup_requests_service():
+    try:
+        with open(CSV_TOPUP_FILE, "r") as file:
+            reader = csv.reader(file)
+            logs = [
+                {"timestamp": row[0], "user_id": int(row[1]), "amount": float(row[2]), "status": row[3]}
+                for row in reader
+            ]
+        return logs, None
+    except FileNotFoundError:
+        return [], None
+    except Exception as e:
+        return None, f"Failed to read top-up requests: {str(e)}"
+    
+
+def mark_topup_request_as_approved(user_id: int, amount: float):
+    updated = False
+    temp_file = NamedTemporaryFile(mode='w', delete=False, newline='')
+    with open(CSV_TOPUP_FILE, "r", newline="") as csvfile, temp_file:
+        reader = csv.reader(csvfile)
+        writer = csv.writer(temp_file)
+
+        for row in reader:
+            # Match on user_id, amount, and status pending
+            if int(row[1]) == user_id and float(row[2]) == amount and row[3] == "pending":
+                row[3] = "approved"
+                updated = True
+            writer.writerow(row)
+
+    # Replace original with updated file
+    shutil.move(temp_file.name, CSV_TOPUP_FILE)
+
+    return updated
+
+
+

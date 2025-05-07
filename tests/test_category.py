@@ -57,7 +57,9 @@ def test_get_all_categories(client):
     response = client.get("/categories")
     assert response.status_code == 200
     data = response.get_json()
-    assert isinstance(data, list)
+    assert isinstance(data, dict)
+    assert "categories" in data
+    assert isinstance(data["categories"], list)
 
 
 def test_get_category_by_id(client, vendor_token):
@@ -77,7 +79,8 @@ def test_get_category_by_id(client, vendor_token):
     assert response.status_code in [200, 404]
     if response.status_code == 200:
         data = response.get_json()
-        assert "name" in data
+        assert "category" in data
+        assert "name" in data["category"]
 
 
 def test_update_category(client, vendor_token):
@@ -103,7 +106,7 @@ def test_update_category(client, vendor_token):
     assert response.status_code in [200, 404]
     if response.status_code == 200:
         data = response.get_json()
-        assert data["msg"] == "Category updated"
+        assert data["msg"] == "Category updated successfully"
 
 
 def test_delete_category(client, vendor_token):
@@ -123,4 +126,4 @@ def test_delete_category(client, vendor_token):
     assert response.status_code in [200, 404]
     if response.status_code == 200:
         data = response.get_json()
-        assert data["msg"] == "Category deleted"
+        assert data["msg"] == "Category deleted successfully"

@@ -18,6 +18,7 @@ class BaseConfig:
         "pool_recycle": 1800,  # recycle connections every 30 mins
         "pool_pre_ping": True,  # check if connection is alive before using it
     }
+    REDIS_URL = os.getenv("REDIS_URL")
 
 
 class LocalConfig(BaseConfig):
@@ -44,3 +45,6 @@ class TestingConfig(BaseConfig):
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///test.db"
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "testing-secret-key")
+    RATELIMIT_ENABLED = (
+        False  # Disable rate limiting in tests for speed up testing process
+    )
