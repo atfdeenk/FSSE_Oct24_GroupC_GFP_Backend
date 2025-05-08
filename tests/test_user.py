@@ -1,4 +1,7 @@
 import pytest
+import csv
+import os
+import time
 from flask_jwt_extended import create_access_token
 from models.user import RoleType
 from instance.database import db
@@ -32,6 +35,11 @@ def sample_user_data():
         "bank_account": "987654321",
         "bank_name": "BNI",
     }
+
+@pytest.fixture(autouse=True)
+def temp_csv_file(monkeypatch, tmp_path):
+    temp_csv = tmp_path / "test_topup_requests.csv"
+    monkeypatch.setattr("services.user_services.CSV_TOPUP_FILE", str(temp_csv))
 
 
 def test_register_user(client, sample_user_data):
@@ -320,3 +328,63 @@ def test_admin_topup_negative_balance(client, admin_token, app):
 
     assert response.status_code == 400
     assert response.json["msg"] == "Balance cannot be negative"
+
+def test_admin_approve_topup(client, customer_token, admin_token, tmp_path):
+    headers_admin = {"Authorization": f"Bearer {admin_token}"}
+    headers_customer = {"Authorization": f"Bearer {customer_token}"}
+    csv_path = tmp_path / "test_topup_requests.csv"
+
+    # ✅ Force override the CSV path for this test
+    import services.user_services as us
+    us.CSV_TOPUP_FILE = str(csv_path)
+
+    # ✅ Customer makes the request
+    client.post("/users/me/request-topup", json={"amount": 50000}, headers=headers_customer)
+
+    # ✅ Wait for file to appear
+    for _ in range(30):
+        if csv_path.exists():
+            break
+        time.sleep(0.1)
+
+    assert csv_path.exists(), "CSV file was not created"
+
+    with open(csv_path, newline="") as f:
+        for i, row in enumerate(csv.reader(f)):
+            if row[3] == "pending":
+                request_id = i
+                break
+
+    res = client.post(f"/request-topup/{request_id}/approve", headers=headers_admin)
+    assert res.status_code == 200
+    assert "Top-up approved" in res.json["msg"]
+
+
+
+def test_admin_reject_topup(client, customer_token, admin_token, tmp_path):
+    headers_admin = {"Authorization": f"Bearer {admin_token}"}
+    headers_customer = {"Authorization": f"Bearer {customer_token}"}
+    csv_path = tmp_path / "test_topup_requests.csv"
+
+    import services.user_services as us
+    us.CSV_TOPUP_FILE = str(csv_path)
+
+    client.post("/users/me/request-topup", json={"amount": 30000}, headers=headers_customer)
+
+    for _ in range(30):
+        if csv_path.exists():
+            break
+        time.sleep(0.1)
+
+    assert csv_path.exists(), "CSV file was not created"
+
+    with open(csv_path, newline="") as f:
+        for i, row in enumerate(csv.reader(f)):
+            if row[3] == "pending":
+                request_id = i
+                break
+
+    res = client.post(f"/request-topup/{request_id}/reject", headers=headers_admin)
+    assert res.status_code == 200
+    assert "rejected" in res.json["msg"]
+
