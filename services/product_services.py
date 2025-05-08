@@ -80,12 +80,14 @@ def get_all_serialized_products(
         claims = {}
         user_id = None
 
-    role = claims.get("role") if claims else None  # ✅ ADD THIS LINE
+    role = claims.get("role") if claims else None  
 
 
     include_unapproved = request.args.get("include_unapproved") == "true"
+    only_unapproved = request.args.get("only_unapproved") == "true"
 
-    # ✅ Only allow include_unapproved for admin or vendor
+
+    
     if include_unapproved and role not in ["admin"]:
         include_unapproved = False
 
@@ -97,6 +99,7 @@ def get_all_serialized_products(
         sort_by=sort_by,
         sort_order=sort_order,
         include_unapproved=include_unapproved,
+        only_unapproved=only_unapproved,
         current_user_id=user_id,
         current_user_role=role,
     )
