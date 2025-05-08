@@ -83,8 +83,10 @@ def get_all_serialized_products(
     role = claims.get("role") if claims else None  
 
 
-    include_unapproved = request.args.get("include_unapproved") == "true"
-    only_unapproved = request.args.get("only_unapproved") == "true"
+    include_unapproved = request.args.get("include_unapproved", "false").lower() == "true"
+
+    only_unapproved = request.args.get("only_unapproved", "false").lower() == "true"
+
 
 
     
