@@ -355,3 +355,34 @@ def test_reject_product_as_admin(client, admin_token, vendor_token):
     reject_res = client.patch(f"/products/{product_id}/reject", headers=headers_admin)
     assert reject_res.status_code == 200
     assert reject_res.get_json()["is_approved"] is False
+
+def test_admin_can_fetch_only_unapproved_products(client, admin_token, vendor_token):
+    headers_vendor = {
+        "Authorization": f"Bearer {vendor_token}",
+        "Content-Type": "application/json"
+    }
+
+    # Step 1: Vendor creates an unapproved product
+    payload = {
+        "name": "Unapproved Product",
+        "slug": "unapproved-product",
+        "description": "Pending admin approval",
+        "currency": "IDR",
+        "price": "10000.00",
+        "stock_quantity": 5,
+        "unit_quantity": "pcs",
+        "image_url": "http://example.com/unapproved.jpg"
+    }
+    create_res = client.post("/products", json=payload, headers=headers_vendor)
+    assert create_res.status_code == 201
+    product_id = create_res.get_json()["id"]
+
+    # Step 2: Admin fetches ONLY unapproved products
+    headers_admin = {"Authorization": f"Bearer {admin_token}"}
+    fetch_res = client.get("/products?only_unapproved=true", headers=headers_admin)
+    assert fetch_res.status_code == 200
+    data = fetch_res.get_json()
+
+    # Step 3: Confirm that our product is in the list and not approved
+    assert any(p["id"] == product_id and p["is_approved"] is False for p in data["products"])
+
