@@ -1,7 +1,7 @@
 from repo import feedback_repo
 from models.user import Users  # Needed for email to user lookup
 from instance.database import db
-from shared.cache import cache
+# from shared.cache import cache
 
 
 
@@ -45,7 +45,7 @@ def create_feedback(data, current_user_id):
 
     return feedback, None
 
-@cache.cached(timeout=60)
+#@cache.cached(timeout=60)
 def get_feedback_by_product(product_id):
     return feedback_repo.get_feedback_by_product(product_id)
 

@@ -14,6 +14,8 @@ import csv
 from tempfile import NamedTemporaryFile
 import shutil
 from datetime import datetime
+from shared.crono import now
+
 
 from models.user import RoleType
 
@@ -191,7 +193,6 @@ def update_my_balance_service(user_id: int, added_amount: float):
     if not user:
         return None, "User not found"
 
-    
     current_balance = user.balance or Decimal("0.00")
     new_balance = current_balance + Decimal(str(added_amount))
 
@@ -206,7 +207,6 @@ def update_my_balance_service(user_id: int, added_amount: float):
     return updated_user, None
 
 
-
 def request_topup_service(user_id: int, amount: float):
     if amount <= 0:
         return None, "Invalid top-up amount"
@@ -218,7 +218,7 @@ def request_topup_service(user_id: int, amount: float):
     except FileNotFoundError:
         request_id = 0
 
-    log_entry = [str(datetime.utcnow()), user_id, float(amount), "pending"]
+    log_entry = [str(now()), user_id, float(amount), "pending"]
 
     try:
         with open(globals()["CSV_TOPUP_FILE"], "a", newline="") as file:
@@ -227,7 +227,11 @@ def request_topup_service(user_id: int, amount: float):
     except Exception as e:
         return None, f"Failed to save top-up request: {str(e)}"
 
-    return {"request_id": request_id, "requested_by": user_id, "amount": float(amount)}, None
+    return {
+        "request_id": request_id,
+        "requested_by": user_id,
+        "amount": float(amount),
+    }, None
 
 
 def get_topup_requests_service():
@@ -236,11 +240,11 @@ def get_topup_requests_service():
             reader = csv.reader(file)
             logs = [
                 {
-                    "request_id": idx,  
+                    "request_id": idx,
                     "timestamp": row[0],
                     "user_id": int(row[1]),
                     "amount": float(row[2]),
-                    "status": row[3]
+                    "status": row[3],
                 }
                 for idx, row in enumerate(reader)
             ]
@@ -251,13 +255,12 @@ def get_topup_requests_service():
         return None, f"Failed to read top-up requests: {str(e)}"
 
 
-
 def mark_topup_request_status(request_id: int, status: str):
     updated = False
     user_id = None
     amount = None
 
-    temp_file = NamedTemporaryFile(mode='w', delete=False, newline='')
+    temp_file = NamedTemporaryFile(mode="w", delete=False, newline="")
 
     try:
         with open(globals()["CSV_TOPUP_FILE"], "r", newline="") as csvfile, temp_file:
