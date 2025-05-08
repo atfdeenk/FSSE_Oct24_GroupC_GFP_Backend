@@ -316,7 +316,42 @@ def test_approve_product_as_admin(client, admin_token, vendor_token):
     product_id = res.get_json()["id"]
 
     # Approve with admin
-    headers_admin = {"Authorization": f"Bearer {admin_token}"}
+    headers_admin = {
+    "Authorization": f"Bearer {admin_token}",
+    "Content-Type": "application/json"
+}
+
     approve_res = client.patch(f"/products/{product_id}/approve", headers=headers_admin)
     assert approve_res.status_code == 200
     assert approve_res.get_json()["is_approved"] is True
+
+def test_reject_product_as_admin(client, admin_token, vendor_token):
+    headers_vendor = {
+        "Authorization": f"Bearer {vendor_token}",
+        "Content-Type": "application/json"
+    }
+
+    # Step 1: Vendor creates product
+    payload = {
+        "name": "Reject Me",
+        "slug": "reject-me",
+        "description": "Should be rejected by admin",
+        "currency": "IDR",
+        "price": "18000.00",
+        "stock_quantity": 4,
+        "unit_quantity": "pcs",
+        "image_url": "http://example.com/reject.jpg"
+    }
+    res = client.post("/products", json=payload, headers=headers_vendor)
+    assert res.status_code == 201
+    product_id = res.get_json()["id"]
+
+    # Step 2: Admin rejects the product
+    headers_admin = {
+        "Authorization": f"Bearer {admin_token}",
+        "Content-Type": "application/json"
+    }
+
+    reject_res = client.patch(f"/products/{product_id}/reject", headers=headers_admin)
+    assert reject_res.status_code == 200
+    assert reject_res.get_json()["is_approved"] is False

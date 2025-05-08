@@ -46,7 +46,9 @@ def serialize_product(product: Products) -> dict:
         ),  # ✅ ADD THIS LINE
         "created_at": product.created_at.isoformat() if product.created_at else None,
         "updated_at": product.updated_at.isoformat() if product.updated_at else None,
-        "is_approved": product.is_approved,  # ✅ Expose for frontend
+        "is_approved": product.is_approved,
+        "rejected": product.rejected,
+
 
         "categories": [
             {
@@ -207,14 +209,31 @@ def approve_product_by_id(product_id: int):
     product = product_repo.approve_product(product_id)
     if not product:
         raise ValueError("Product not found")
+    
+    # ✅ clear any previous rejection
+    product.rejected = False
+
     try:
         db.session.commit()
-
         clear_all_product_list_cache()
-
     except Exception:
         db.session.rollback()
         raise
+    return serialize_product(product)
+
+
+
+def reject_product_by_id(product_id: int):
+    product = product_repo.get_product_by_id(product_id)
+    if not product:
+        raise ValueError("Product not found")
+
+    product.is_approved = False
+    product.rejected = True  # ✅ mark as rejected
+    db.session.commit()
+
+    clear_all_product_list_cache()
+
     return serialize_product(product)
 
 
