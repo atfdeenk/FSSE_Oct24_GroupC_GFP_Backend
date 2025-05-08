@@ -72,29 +72,42 @@ def get_all_products_filtered(
     sort_by="created_at",
     sort_order="desc",
     include_unapproved=False,
+    only_unapproved=False,  
     current_user_id=None,
     current_user_role=None,
 ):
+
 
     query = Products.query.options(
         joinedload(Products.categories_linked),
         joinedload(Products.vendor)
     )
 
-    if not include_unapproved:
-        query = query.filter(Products.is_approved == True)
-    elif current_user_role == "vendor":
-        query = query.filter(
-        (Products.is_approved == True) |
-        (Products.vendor_id == current_user_id)
-    )
-    elif current_user_role == "admin":
-        # no filtering → admin sees all
-        pass
-    else:
-        # fallback: treat as public
-        query = query.filter(Products.is_approved == True)
+    if current_user_role == "admin":
+        if only_unapproved:
+            query = query.filter(Products.is_approved == False)
+        elif not include_unapproved:
+            query = query.filter(Products.is_approved == True)
+        # else: admin + include_unapproved → show all (no filter)
 
+    elif current_user_role == "vendor":
+        if only_unapproved:
+            # Vendors should only see their own unapproved products
+            query = query.filter(
+                (Products.is_approved == False) &
+                (Products.vendor_id == current_user_id)
+            )
+        else:
+            if include_unapproved:
+                query = query.filter(
+                    (Products.is_approved == True) |
+                    (Products.vendor_id == current_user_id)
+                )
+            else:
+                query = query.filter(Products.is_approved == True)
+
+
+    
 # Admin: no filter
 
 

@@ -34,9 +34,12 @@ config/base.py
 config/remote.py.envrc
 uv.lock
 postgres_db_data/
+note.md
+
 # Ignore local test database
 instance/test.db
 
 # Ignore top-up log file
 logs/topup_requests.csv
+
 

@@ -3,12 +3,12 @@
 from sqlalchemy.exc import IntegrityError
 from repo import category_repo
 from models.category import Categories
-from shared.cache import cache
 
 
-@cache.cached(timeout=3600)
+
+
 def get_all_categories():
-    print("[CACHE MISS] Fetching categories from DB...")
+    
     return category_repo.get_all_categories()
 
 def create_category(data, current_user):
@@ -22,8 +22,7 @@ def create_category(data, current_user):
             data["vendor_id"] = current_user["id"]  # associate with logged-in vendor
         category = category_repo.create_category(data)
         db.session.commit()
-        cache.delete_memoized(get_all_categories)
-
+        
         return category, None
     except IntegrityError as e:
         db.session.rollback()
@@ -59,7 +58,7 @@ def update_category(category_id, data, current_user):
     try:
         updated_category = category_repo.update_category(category, data)
         db.session.commit()
-        cache.delete_memoized(get_all_categories)
+        
 
         return updated_category, None
     except Exception as e:
@@ -89,7 +88,7 @@ def delete_category(category_id, current_user):
     try:
         category_repo.delete_category(category)
         db.session.commit()
-        cache.delete_memoized(get_all_categories)
+       
 
         return category, None
     except Exception as e:
