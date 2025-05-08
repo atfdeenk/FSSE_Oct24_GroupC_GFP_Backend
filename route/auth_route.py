@@ -321,6 +321,7 @@ def get_my_balance():
     return jsonify({"balance": float(user.balance or 0.0)}), 200
 
 
+# ⚠️ Deprecated: use PATCH /request-topup/<id>/approve instead
 @auth_bp.route("/users/<int:user_id>/balance", methods=["PATCH"])
 @limiter.limit("5 per minute")
 @jwt_required()
@@ -346,13 +347,17 @@ def admin_update_user_balance(user_id):
         return jsonify({"msg": error}), 404
 
     # ✅ Mark top-up request as approved in CSV
-    user_services.mark_topup_request_as_approved(user_id, added_amount)
+    # user_services.mark_topup_request_as_approved(user_id, added_amount)
 
-    return jsonify({
-        "msg": f"Balance updated for user {user_id}",
-        "balance": float(updated_user.balance)
-    }), 200
-
+    return (
+        jsonify(
+            {
+                "msg": f"Balance updated for user {user_id}",
+                "balance": float(updated_user.balance),
+            }
+        ),
+        200,
+    )
 
 
 @auth_bp.route("/users/me/request-topup", methods=["POST"])
@@ -368,10 +373,16 @@ def request_topup():
     if error:
         return jsonify({"msg": error}), 400
 
-    return jsonify({
-        "msg": "Top-up request submitted. Please wait for admin approval.",
-        "requested": result
-    }), 200
+    return (
+        jsonify(
+            {
+                "msg": "Top-up request submitted. Please wait for admin approval.",
+                "requested": result,
+            }
+        ),
+        200,
+    )
+
 
 @auth_bp.route("/topup-requests", methods=["GET"])
 @jwt_required()
@@ -383,3 +394,41 @@ def view_topup_requests():
         return jsonify({"msg": error}), 500
 
     return jsonify({"requests": logs}), 200
+
+
+@auth_bp.route("/request-topup/<int:request_id>/approve", methods=["POST"])
+@jwt_required()
+@role_required("admin")
+def approve_topup(request_id):
+    success, user_id, amount = user_services.mark_topup_request_status(
+        request_id, "approved"
+    )
+    if not success:
+        return jsonify({"msg": "Top-up request not found or already processed"}), 404
+
+    updated_user, error = user_services.update_my_balance_service(user_id, amount)
+    if error:
+        return jsonify({"msg": error}), 404
+
+    return (
+        jsonify(
+            {
+                "msg": f"Top-up approved and balance updated for user {user_id}",
+                "new_balance": float(updated_user.balance),
+            }
+        ),
+        200,
+    )
+
+
+@auth_bp.route("/request-topup/<int:request_id>/reject", methods=["POST"])
+@jwt_required()
+@role_required("admin")
+def reject_topup(request_id):
+    success, user_id, _ = user_services.mark_topup_request_status(
+        request_id, "rejected"
+    )
+    if not success:
+        return jsonify({"msg": "Top-up request not found or already processed"}), 404
+
+    return jsonify({"msg": f"Top-up request {request_id} rejected"}), 200
