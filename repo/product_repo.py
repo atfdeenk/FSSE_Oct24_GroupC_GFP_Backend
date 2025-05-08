@@ -98,15 +98,16 @@ def get_all_products_filtered(
                 (Products.vendor_id == current_user_id)
             )
         else:
-            query = query.filter(
-                (Products.is_approved == True) |
-                (Products.vendor_id == current_user_id)
-            )
+            if include_unapproved:
+                query = query.filter(
+                    (Products.is_approved == True) |
+                    (Products.vendor_id == current_user_id)
+                )
+            else:
+                query = query.filter(Products.is_approved == True)
 
-    else:
-        # Public fallback
-        query = query.filter(Products.is_approved == True)
 
+    
 # Admin: no filter
 
 
