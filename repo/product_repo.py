@@ -76,6 +76,7 @@ def get_all_products_filtered(
     current_user_id=None,
     current_user_role=None,
 ):
+    print(f"[REPO] current_user_role={current_user_role}, user_id={current_user_id}, include_unapproved={include_unapproved}, only_unapproved={only_unapproved}")
 
 
     query = Products.query.options(
@@ -88,23 +89,29 @@ def get_all_products_filtered(
             query = query.filter(Products.is_approved == False)
         elif not include_unapproved:
             query = query.filter(Products.is_approved == True)
-        # else: admin + include_unapproved → show all (no filter)
+        
 
     elif current_user_role == "vendor":
+        print(f"[DEBUG][REPO] role=vendor, include_unapproved={include_unapproved}, only_unapproved={only_unapproved}, vendor_id={current_user_id}")
+        
         if only_unapproved:
-            # Vendors should only see their own unapproved products
             query = query.filter(
                 (Products.is_approved == False) &
                 (Products.vendor_id == current_user_id)
             )
+        elif include_unapproved:
+            query = query.filter(
+                (Products.is_approved == True) |
+                (Products.vendor_id == current_user_id)
+            )
         else:
-            if include_unapproved:
-                query = query.filter(
-                    (Products.is_approved == True) |
-                    (Products.vendor_id == current_user_id)
-                )
-            else:
-                query = query.filter(Products.is_approved == True)
+            query = query.filter(Products.is_approved == True)
+
+    else:
+        
+        print("[REPO] PUBLIC fallback: applying is_approved == True filter")
+        query = query.filter(Products.is_approved == True)
+
 
 
     

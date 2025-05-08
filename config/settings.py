@@ -10,7 +10,7 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 import models  # noqa: F401
 from instance.database import init_db, db
-from shared.cache import cache
+# from shared.cache import cache
 
 from flask import jsonify
 from werkzeug.exceptions import HTTPException
@@ -53,9 +53,9 @@ def create_app(config_module=None):
     )
     app.config.from_object(config_path)
 
-    app.config["CACHE_TYPE"] = "RedisCache"
-    app.config["CACHE_REDIS_URL"] = os.getenv("REDIS_URL")
-    cache.init_app(app)
+    # app.config["CACHE_TYPE"] = "RedisCache"
+    # app.config["CACHE_REDIS_URL"] = os.getenv("REDIS_URL")
+    # cache.init_app(app)
 
     # 🛠️ ENABLE CORS HERE
     # CORS(app, origins=["https://bumibrew-pearl.vercel.app"], supports_credentials=True)
