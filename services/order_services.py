@@ -28,6 +28,16 @@ def create_order_with_items(user_id, items, voucher_code=None):  # ✅ Accept vo
         if not voucher or (voucher.expires_at and voucher.expires_at < datetime.utcnow()):
             raise ValueError("Voucher is invalid or expired.")
 
+        # Ensure all items are from the voucher's vendor
+        product_ids = [item["product_id"] for item in items]
+        products = Products.query.filter(Products.id.in_(product_ids)).all()
+        if not products:
+            raise ValueError("Products not found.")
+
+        distinct_vendor_ids = {p.vendor_id for p in products}
+        if len(distinct_vendor_ids) != 1 or voucher.vendor_id not in distinct_vendor_ids:
+            raise ValueError("Voucher can only be used for products from the issuing vendor.")
+
         if voucher.discount_percent:
             discount_amount += total_amount * (voucher.discount_percent / 100)
         elif voucher.discount_amount:

@@ -94,33 +94,39 @@ def delete_item(item_id):
 @jwt_required()
 @role_required("customer")
 def get_cart_summary():
+    from models.voucher import Vouchers
+    from datetime import datetime
+
     user_id = int(get_jwt_identity())
     voucher_code = request.args.get("voucher_code")
 
-    # 1. Get cart items from service
+    # 1. Get cart items
     items = cart_item_service.get_cart_items(user_id)
     if not items:
         return jsonify({"msg": "Cart is empty"}), 400
 
-    # 2. Calculate total
+    # 2. Total before discount
     total_before = sum(i.quantity * i.product.price for i in items)
     discount = 0
     voucher = None
 
     if voucher_code:
-        from models.voucher import Vouchers
-        from datetime import datetime
         voucher = Vouchers.query.filter_by(code=voucher_code, is_active=True).first()
         if not voucher or (voucher.expires_at and voucher.expires_at < datetime.utcnow()):
             return jsonify({"msg": "Voucher is invalid or expired"}), 400
 
+        # 🔒 Enforce voucher only applies if all products are from the voucher's vendor
+        distinct_vendor_ids = {i.product.vendor_id for i in items}
+        if len(distinct_vendor_ids) != 1 or voucher.vendor_id not in distinct_vendor_ids:
+            return jsonify({"msg": "Voucher can only be used for products from the issuing vendor"}), 400
+
+        # Calculate discount
         if voucher.discount_percent:
             discount = total_before * (Decimal(str(voucher.discount_percent)) / Decimal("100"))
         elif voucher.discount_amount:
             discount = Decimal(str(voucher.discount_amount))
 
     total_after = max(total_before - discount, Decimal("0"))
-
 
     return jsonify({
         "total_before_discount": float(total_before),
@@ -132,7 +138,9 @@ def get_cart_summary():
                 "product_id": i.product_id,
                 "product_name": i.product.name,
                 "unit_price": float(i.product.price),
-                "quantity": i.quantity
+                "quantity": i.quantity,
+                "vendor_id": i.product.vendor_id,
+                "vendor_name": i.product.vendor.username if i.product.vendor else None
             } for i in items
         ]
     }), 200
