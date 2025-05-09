@@ -11,6 +11,7 @@ order_bp = Blueprint("order_bp", __name__)
 def create_order():
     data = request.get_json()
     items = data.get("items", [])
+    voucher_code = data.get("voucher_code")  
     current_user = get_jwt_identity()
 
     current_app.logger.info(f"User {current_user} is attempting to create an order.")
@@ -36,7 +37,8 @@ def create_order():
 
     user_id = current_user.get("id") if isinstance(current_user, dict) else current_user
 
-    order, error = order_services.create_order_with_items(user_id, items)
+    
+    order, error = order_services.create_order_with_items(user_id, items, voucher_code)
     if error:
         current_app.logger.error(f"Order creation failed: {error}")
         return jsonify({"msg": error}), 400
@@ -62,11 +64,14 @@ def create_order():
             {
                 "msg": "Order created",
                 "order_id": order.id,
+                "total_amount": float(order.total_amount),
+                "voucher_code": order.voucher.code if order.voucher else None,
                 "items": response_items,
             }
         ),
         201,
     )
+
 
 
 # Get a specific order
@@ -190,3 +195,48 @@ def delete_order(order_id):
 
     current_app.logger.info(f"Order {order_id} deleted successfully.")
     return jsonify({"msg": "Order deleted"}), 200
+
+
+@order_bp.route("/orders/preview", methods=["POST"])
+@jwt_required()
+def preview_order():
+    data = request.get_json()
+    items = data.get("items", [])
+    voucher_code = data.get("voucher_code")
+
+    if not items:
+        return jsonify({"msg": "No items provided."}), 400
+
+    required_keys = {"product_id", "quantity", "unit_price"}
+    for idx, item in enumerate(items):
+        if not all(key in item for key in required_keys):
+            return jsonify({
+                "msg": f"Item at index {idx} is missing required keys: {required_keys}"
+            }), 400
+
+    total_before = sum(item["quantity"] * item["unit_price"] for item in items)
+
+    discount = 0
+    voucher = None
+
+    if voucher_code:
+        from models.voucher import Vouchers
+        from datetime import datetime
+
+        voucher = Vouchers.query.filter_by(code=voucher_code, is_active=True).first()
+        if not voucher or (voucher.expires_at and voucher.expires_at < datetime.utcnow()):
+            return jsonify({"msg": "Voucher is invalid or expired."}), 400
+
+        if voucher.discount_percent:
+            discount = total_before * (voucher.discount_percent / 100)
+        elif voucher.discount_amount:
+            discount = float(voucher.discount_amount)
+
+    total_after = max(total_before - discount, 0)
+
+    return jsonify({
+        "total_before_discount": total_before,
+        "discount_amount": discount,
+        "total_after_discount": total_after,
+        "voucher_code": voucher.code if voucher else None
+    }), 200
