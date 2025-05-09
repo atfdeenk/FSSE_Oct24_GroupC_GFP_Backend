@@ -3,6 +3,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from services import cart_services as cart_service
 from services import cart_item_services as cart_item_service
 from shared.auth import role_required
+from decimal import Decimal
+
 
 cart_bp = Blueprint("cart_bp", __name__)
 
@@ -86,3 +88,51 @@ def delete_item(item_id):
         current_app.logger.warning(f"User {user_id} tried to delete non-existent cart item {item_id}.")
         return jsonify({"message": "Cart item not found."}), 404
     return jsonify({"message": "Item removed from cart successfully."}), 200
+
+
+@cart_bp.route("/cart/summary", methods=["GET"])
+@jwt_required()
+@role_required("customer")
+def get_cart_summary():
+    user_id = int(get_jwt_identity())
+    voucher_code = request.args.get("voucher_code")
+
+    # 1. Get cart items from service
+    items = cart_item_service.get_cart_items(user_id)
+    if not items:
+        return jsonify({"msg": "Cart is empty"}), 400
+
+    # 2. Calculate total
+    total_before = sum(i.quantity * i.product.price for i in items)
+    discount = 0
+    voucher = None
+
+    if voucher_code:
+        from models.voucher import Vouchers
+        from datetime import datetime
+        voucher = Vouchers.query.filter_by(code=voucher_code, is_active=True).first()
+        if not voucher or (voucher.expires_at and voucher.expires_at < datetime.utcnow()):
+            return jsonify({"msg": "Voucher is invalid or expired"}), 400
+
+        if voucher.discount_percent:
+            discount = total_before * (Decimal(str(voucher.discount_percent)) / Decimal("100"))
+        elif voucher.discount_amount:
+            discount = Decimal(str(voucher.discount_amount))
+
+    total_after = max(total_before - discount, Decimal("0"))
+
+
+    return jsonify({
+        "total_before_discount": float(total_before),
+        "discount_amount": float(discount),
+        "total_after_discount": float(total_after),
+        "voucher_code": voucher.code if voucher else None,
+        "items": [
+            {
+                "product_id": i.product_id,
+                "product_name": i.product.name,
+                "unit_price": float(i.product.price),
+                "quantity": i.quantity
+            } for i in items
+        ]
+    }), 200

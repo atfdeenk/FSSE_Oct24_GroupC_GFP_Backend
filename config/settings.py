@@ -36,6 +36,7 @@ from route.feedback_route import feedback_bp
 from route.order_route import order_bp
 from route.wishlist_route import wishlist_bp
 from route.subscription_route import subscription_bp
+from route.voucher_route import voucher_bp
 
 # Import error handlers
 from route.error_handlers import register_error_handlers
@@ -122,6 +123,7 @@ def create_app(config_module=None):
     app.register_blueprint(order_bp)
     app.register_blueprint(wishlist_bp)
     app.register_blueprint(subscription_bp)
+    app.register_blueprint(voucher_bp)
 
     @app.route("/uploads/<path:filename>")
     def serve_uploads(filename):

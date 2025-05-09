@@ -13,6 +13,7 @@ from .product_image import ProductImages
 from .feedback import Feedbacks
 
 from .wishlist_item import WishlistItems
+from .voucher import Vouchers
 
 
 Product = Products
@@ -31,4 +32,5 @@ __all__ = [
     "ProductImages",
     "Feedbacks",
     "WishlistItems",
+    "Vouchers",
 ]
