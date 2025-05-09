@@ -24,22 +24,52 @@ CSV_TOPUP_FILE = "logs/topup_requests.csv"
 
 def create_user(data):
     try:
+        print("[DEBUG] Incoming user data:", data)
+        existing_user = Users.query.filter(
+            (Users.email.ilike(data["email"])) | 
+            (Users.username.ilike(data["username"]))
+        ).first()
+
+        if existing_user:
+            return None, "User with this email or username already exists."
+
         data["password_hash"] = hash_password(data["password"])
         del data["password"]
 
-        # ✅ Convert role string to Enum
         try:
             data["role"] = RoleType(data["role"])
         except KeyError:
             raise ValueError("Missing required field: role")
+        
+        # Ensure optional fields are not None if DB expects a value
+        data.setdefault("city", "Unknown")
+        data.setdefault("phone", None)
+        data.setdefault("address", None)
+        data.setdefault("state", None)
+        data.setdefault("country", None)
+        data.setdefault("zip_code", None)
+        data.setdefault("image_url", None)
+        data.setdefault("bank_account", None)
+        data.setdefault("bank_name", None)
+
 
         user = user_repo.create_user(data)
-        db.session.commit()  # Commit after adding user
+        db.session.commit()
         return user, None
+
     except IntegrityError as e:
-        print("IntegrityError:", e)  # Debug output
+        print("IntegrityError:", e)
         db.session.rollback()
-        return None, "User with this email or username already exists."
+
+        # Check specific constraint violations
+        if "users_email_key" in str(e) or "users_username_key" in str(e):
+            return None, "User with this email or username already exists."
+        elif "null value in column \"city\"" in str(e):
+            return None, "Missing required field: city"
+        else:
+            return None, "Failed to create user due to constraint violation"
+
+
     except Exception as e:
         print("Exception in create_user:", e)
         db.session.rollback()
