@@ -14,6 +14,7 @@ from .feedback import Feedbacks
 
 from .wishlist_item import WishlistItems
 from .voucher import Vouchers
+from .notification import Notification
 
 
 Product = Products
@@ -33,4 +34,5 @@ __all__ = [
     "Feedbacks",
     "WishlistItems",
     "Vouchers",
+    "Notification",
 ]
