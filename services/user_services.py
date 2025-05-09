@@ -25,9 +25,21 @@ CSV_TOPUP_FILE = "logs/topup_requests.csv"
 def create_user(data):
     try:
         print("[DEBUG] Incoming user data:", data)
+
+        # Get and normalize email
+        email = data.get("email", "").lower()
+        username = data.get("username", "").lower() or email.split("@")[0]  # fallback
+
+        if not email:
+            return None, "Missing required field: email"
+
+        data["email"] = email
+        data["username"] = username  # even if nullable, store it cleanly
+
+        # Uniqueness check if username is not empty
         existing_user = Users.query.filter(
-            (Users.email.ilike(data["email"])) | 
-            (Users.username.ilike(data["username"]))
+            (Users.email.ilike(email)) |
+            (Users.username.ilike(username))
         ).first()
 
         if existing_user:
@@ -40,8 +52,8 @@ def create_user(data):
             data["role"] = RoleType(data["role"])
         except KeyError:
             raise ValueError("Missing required field: role")
-        
-        # Ensure optional fields are not None if DB expects a value
+
+        # Fallbacks for required fields
         data.setdefault("city", "Unknown")
         data.setdefault("phone", None)
         data.setdefault("address", None)
@@ -52,7 +64,6 @@ def create_user(data):
         data.setdefault("bank_account", None)
         data.setdefault("bank_name", None)
 
-
         user = user_repo.create_user(data)
         db.session.commit()
         return user, None
@@ -61,14 +72,12 @@ def create_user(data):
         print("IntegrityError:", e)
         db.session.rollback()
 
-        # Check specific constraint violations
         if "users_email_key" in str(e) or "users_username_key" in str(e):
             return None, "User with this email or username already exists."
         elif "null value in column \"city\"" in str(e):
             return None, "Missing required field: city"
         else:
             return None, "Failed to create user due to constraint violation"
-
 
     except Exception as e:
         print("Exception in create_user:", e)
