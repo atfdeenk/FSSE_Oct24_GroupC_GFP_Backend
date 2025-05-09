@@ -26,7 +26,8 @@ def get_vouchers():
 @voucher_bp.route("/vouchers/<int:voucher_id>", methods=["GET"])
 @jwt_required()
 def get_voucher(voucher_id):
-    voucher = Vouchers.query.get(voucher_id)
+    voucher = db.session.get(Vouchers, voucher_id)
+
     if not voucher:
         return jsonify({"msg": "Voucher not found"}), 404
     return jsonify({
@@ -59,7 +60,7 @@ def create_voucher():
 @jwt_required()
 @role_required("admin")
 def update_voucher(voucher_id):
-    voucher = Vouchers.query.get(voucher_id)
+    voucher = db.session.get(Vouchers, voucher_id)
     if not voucher:
         return jsonify({"msg": "Voucher not found"}), 404
 
@@ -79,7 +80,7 @@ def update_voucher(voucher_id):
 @role_required("admin")
 def delete_voucher(voucher_id):
     from models.order import Orders  
-    voucher = Vouchers.query.get(voucher_id)
+    voucher = db.session.get(Vouchers, voucher_id)
     if not voucher:
         return jsonify({"msg": "Voucher not found"}), 404
 
@@ -96,7 +97,7 @@ def delete_voucher(voucher_id):
 @jwt_required()
 @role_required("admin")
 def deactivate_voucher(voucher_id):
-    voucher = Vouchers.query.get(voucher_id)
+    voucher = db.session.get(Vouchers, voucher_id)
     if not voucher:
         return jsonify({"msg": "Voucher not found"}), 404
 
