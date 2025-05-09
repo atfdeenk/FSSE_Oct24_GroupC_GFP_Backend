@@ -18,7 +18,7 @@ class Users(db.Model):
     __tablename__ = "users"
 
     id: int = db.Column(db.Integer, primary_key=True)
-    username: str = db.Column(db.String(80), unique=True, nullable=False)
+    username: str = db.Column(db.String(80), unique=True, nullable=True)
     first_name: str = db.Column(db.String(80), nullable=False)
     last_name: str = db.Column(db.String(80), nullable=False)
     email: str = db.Column(db.String(120), unique=True, nullable=False)
