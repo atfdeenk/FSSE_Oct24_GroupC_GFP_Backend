@@ -15,6 +15,9 @@ from instance.database import init_db, db
 from flask import jsonify
 from werkzeug.exceptions import HTTPException
 from utils.logger import setup_logger
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Import blueprints
 from route.index import index_router
