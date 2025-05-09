@@ -72,29 +72,56 @@ def get_all_products_filtered(
     sort_by="created_at",
     sort_order="desc",
     include_unapproved=False,
+    only_unapproved=False,  
     current_user_id=None,
     current_user_role=None,
 ):
+    print(f"[REPO] current_user_role={current_user_role}, user_id={current_user_id}, include_unapproved={include_unapproved}, only_unapproved={only_unapproved}")
+
 
     query = Products.query.options(
         joinedload(Products.categories_linked),
         joinedload(Products.vendor)
     )
 
-    if not include_unapproved:
-        query = query.filter(Products.is_approved == True)
+    if current_user_role == "admin":
+        if only_unapproved:
+            query = query.filter(
+                Products.is_approved == False,
+                Products.rejected == False  # <-- Add this
+            )
+        elif not include_unapproved:
+            query = query.filter(Products.is_approved == True)
+        elif include_unapproved:
+            query = query.filter(
+                (Products.is_approved == False) & 
+                (Products.rejected == False)  # <-- Add this
+            )
+
     elif current_user_role == "vendor":
-        query = query.filter(
-        (Products.is_approved == True) |
-        (Products.vendor_id == current_user_id)
-    )
-    elif current_user_role == "admin":
-        # no filtering → admin sees all
-        pass
+        print(f"[DEBUG][REPO] role=vendor, include_unapproved={include_unapproved}, only_unapproved={only_unapproved}, vendor_id={current_user_id}")
+        
+        if only_unapproved:
+            query = query.filter(
+                (Products.is_approved == False) &
+                (Products.vendor_id == current_user_id)
+            )
+        elif include_unapproved:
+            query = query.filter(
+                (Products.is_approved == True) |
+                (Products.vendor_id == current_user_id)
+            )
+        else:
+            query = query.filter(Products.is_approved == True)
+
     else:
-        # fallback: treat as public
+        
+        print("[REPO] PUBLIC fallback: applying is_approved == True filter")
         query = query.filter(Products.is_approved == True)
 
+
+
+    
 # Admin: no filter
 
 

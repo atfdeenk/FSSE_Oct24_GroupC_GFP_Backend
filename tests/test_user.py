@@ -36,11 +36,6 @@ def sample_user_data():
         "bank_name": "BNI",
     }
 
-@pytest.fixture(autouse=True)
-def temp_csv_file(monkeypatch, tmp_path):
-    temp_csv = tmp_path / "test_topup_requests.csv"
-    monkeypatch.setattr("services.user_services.CSV_TOPUP_FILE", str(temp_csv))
-
 
 def test_register_user(client, sample_user_data):
     """Test user registration."""
@@ -364,10 +359,10 @@ def test_admin_approve_topup(client, customer_token, admin_token, tmp_path):
 def test_admin_reject_topup(client, customer_token, admin_token, tmp_path):
     headers_admin = {"Authorization": f"Bearer {admin_token}"}
     headers_customer = {"Authorization": f"Bearer {customer_token}"}
-    csv_path = tmp_path / "test_topup_requests.csv"
+    csv_path = tmp_path / "topup_test.csv"
 
-    import services.user_services as us
-    us.CSV_TOPUP_FILE = str(csv_path)
+
+     
 
     client.post("/users/me/request-topup", json={"amount": 30000}, headers=headers_customer)
 

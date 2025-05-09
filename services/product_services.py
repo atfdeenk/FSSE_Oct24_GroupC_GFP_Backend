@@ -7,19 +7,9 @@ from repo import product_repo
 from decimal import Decimal
 from werkzeug.exceptions import HTTPException
 from sqlalchemy.exc import IntegrityError
-from shared.cache import cache
 
-def clear_all_product_list_cache():
-    for page in range(1, 6): 
-        print(f"⛔ Deleting page {page}") # adjust range if needed
-        cache.delete_memoized(
-            get_all_serialized_products,
-            None, None, page, 10, "created_at", "desc"
-        )
-        cache.delete_memoized(
-            get_all_serialized_products,
-            None, None, page, 10, "price", "asc"
-        )
+# from shared.cache import cache
+
 
 def serialize_product(product: Products) -> dict:
     return {
@@ -41,15 +31,11 @@ def serialize_product(product: Products) -> dict:
         "featured": product.featured,
         "flash_sale": product.flash_sale,
         "vendor_id": product.vendor_id,
-        "vendor_name": (
-            product.vendor.username if product.vendor else None
-        ),  # ✅ ADD THIS LINE
+        "vendor_name": (product.vendor.username if product.vendor else None),
         "created_at": product.created_at.isoformat() if product.created_at else None,
         "updated_at": product.updated_at.isoformat() if product.updated_at else None,
         "is_approved": product.is_approved,
         "rejected": product.rejected,
-
-
         "categories": [
             {
                 "id": category.id,
@@ -60,7 +46,8 @@ def serialize_product(product: Products) -> dict:
         ],
     }
 
-@cache.cached(timeout=60, query_string=True)
+
+# @cache.cached(timeout=60, query_string=True)
 def get_all_serialized_products(
     search=None,
     category_id=None,
@@ -80,12 +67,18 @@ def get_all_serialized_products(
         claims = {}
         user_id = None
 
-    role = claims.get("role") if claims else None  # ✅ ADD THIS LINE
+    role = claims.get("role") if claims else None
 
+    include_unapproved = (
+        request.args.get("include_unapproved", "false").lower() == "true"
+    )
 
-    include_unapproved = request.args.get("include_unapproved") == "true"
+    only_unapproved = request.args.get("only_unapproved", "false").lower() == "true"
 
-    # ✅ Only allow include_unapproved for admin or vendor
+    print(
+        f"[DEBUG] role={role}, include_unapproved={include_unapproved}, only_unapproved={only_unapproved}, user_id={user_id}"
+    )
+
     if include_unapproved and role not in ["admin"]:
         include_unapproved = False
 
@@ -97,6 +90,7 @@ def get_all_serialized_products(
         sort_by=sort_by,
         sort_order=sort_order,
         include_unapproved=include_unapproved,
+        only_unapproved=only_unapproved,
         current_user_id=user_id,
         current_user_role=role,
     )
@@ -107,7 +101,6 @@ def get_all_serialized_products(
         "page": page,
         "limit": limit,
     }
-
 
 
 def get_paginated_serialized_products(page: int, limit: int):
@@ -121,7 +114,8 @@ def get_paginated_serialized_products(page: int, limit: int):
         "limit": paginated.per_page,
     }
 
-@cache.cached(timeout=300)
+
+# @cache.cached(timeout=300)
 def get_serialized_product_by_id(product_id: int):
     product = product_repo.get_product_by_id(product_id)
     if not product or not product.is_approved:
@@ -158,7 +152,7 @@ def create_product_with_serialization(data: dict):
         db.session.commit()
 
         # ✅ Invalidate cached /products list
-        clear_all_product_list_cache()
+        # clear_all_product_list_cache()
 
         return serialize_product(product)
 
@@ -175,6 +169,7 @@ def create_product_with_serialization(data: dict):
         print(e)
         abort(500, f"Server Error: {str(e)}")
 
+
 def update_product_with_serialization(product_id: int, data: dict):
     product = product_repo.update_product(product_id, data)
     if not product:
@@ -182,7 +177,7 @@ def update_product_with_serialization(product_id: int, data: dict):
     try:
         db.session.commit()
 
-        clear_all_product_list_cache()
+        # clear_all_product_list_cache()
 
     except Exception:
         db.session.rollback()
@@ -197,7 +192,7 @@ def delete_product_and_return_message(product_id: int):
     try:
         db.session.commit()
 
-        clear_all_product_list_cache()
+        # clear_all_product_list_cache()
 
     except Exception:
         db.session.rollback()
@@ -209,18 +204,17 @@ def approve_product_by_id(product_id: int):
     product = product_repo.approve_product(product_id)
     if not product:
         raise ValueError("Product not found")
-    
+
     # ✅ clear any previous rejection
     product.rejected = False
 
     try:
         db.session.commit()
-        clear_all_product_list_cache()
+        # clear_all_product_list_cache()
     except Exception:
         db.session.rollback()
         raise
     return serialize_product(product)
-
 
 
 def reject_product_by_id(product_id: int):
@@ -230,14 +224,16 @@ def reject_product_by_id(product_id: int):
 
     product.is_approved = False
     product.rejected = True  # ✅ mark as rejected
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
 
-    clear_all_product_list_cache()
+    # clear_all_product_list_cache()
 
     return serialize_product(product)
 
+    # Add more common combos (search/category) if needed
 
-
-        # Add more common combos (search/category) if needed
-
-        # You can add more common variations if needed
+    # You can add more common variations if needed

@@ -1,5 +1,10 @@
 from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+from flask_jwt_extended import (
+    jwt_required,
+    get_jwt_identity,
+    get_jwt,
+    verify_jwt_in_request,
+)
 from shared.auth import role_required
 from services.product_services import (
     get_all_serialized_products,
@@ -47,6 +52,9 @@ def get_all_products():
     limit = request.args.get("limit", default=10, type=int)
     sort_by = request.args.get("sort_by", default="created_at", type=str)
     sort_order = request.args.get("sort_order", default="desc", type=str)
+    include_unapproved = (
+        request.args.get("include_unapproved", "false").lower() == "true"
+    )
 
     # 🆕 If frontend sends category slug
     if category_slug and not category_id:
@@ -62,6 +70,18 @@ def get_all_products():
                 jsonify({"products": [], "total": 0, "page": page, "limit": limit}),
                 200,
             )
+
+    # Check role if include_unapproved is requested
+    if include_unapproved:
+        try:
+            verify_jwt_in_request()
+            claims = get_jwt()
+            role = claims.get("role")
+        except Exception:
+            return jsonify({"message": "Unauthorized"}), 401
+
+        if role != "admin":
+            return jsonify({"message": "Forbidden: Admins only"}), 403
 
     products = get_all_serialized_products(
         search=search,
