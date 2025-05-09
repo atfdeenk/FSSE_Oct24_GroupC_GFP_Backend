@@ -19,7 +19,7 @@ auth_bp = Blueprint("auth_bp", __name__)
 
 # Define input schema for user registration and update
 class UserSchema(Schema):
-    username = fields.Str(required=True)
+    username = fields.Str(required=False)
     email = fields.Email(required=True)
     password = fields.Str(required=True, load_only=True)
     first_name = fields.Str(required=True)

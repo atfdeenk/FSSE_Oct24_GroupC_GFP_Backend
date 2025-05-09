@@ -2,22 +2,27 @@ import os
 import redis
 import logging
 import sys
-from shared.limiter import limiter
-from shared.redis_check import check_redis_connection
+import models  # noqa: F401
 
-from flask import Flask, send_from_directory, current_app
+from werkzeug.exceptions import HTTPException
+from flask import Flask, jsonify, send_from_directory, current_app
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
-import models  # noqa: F401
-from instance.database import init_db, db
-# from shared.cache import cache
+from flask_mail import Mail
 
-from flask import jsonify
-from werkzeug.exceptions import HTTPException
-from utils.logger import setup_logger
+mail = Mail()
+
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# from shared.cache import cache
+from shared.limiter import limiter
+from shared.redis_check import check_redis_connection
+from instance.database import init_db, db
+from config.mail_config import init_mail_config
+from utils.logger import setup_logger
+
 
 # Import blueprints
 from route.index import index_router
@@ -30,6 +35,7 @@ from route.category_route import category_bp
 from route.feedback_route import feedback_bp
 from route.order_route import order_bp
 from route.wishlist_route import wishlist_bp
+from route.subscription_route import subscription_bp
 
 # Import error handlers
 from route.error_handlers import register_error_handlers
@@ -55,6 +61,10 @@ def create_app(config_module=None):
         "CONFIG_MODULE", "config.config.LocalConfig"
     )
     app.config.from_object(config_path)
+
+    # 🔔 Email Configuration
+    init_mail_config(app)
+    mail.init_app(app)
 
     # app.config["CACHE_TYPE"] = "RedisCache"
     # app.config["CACHE_REDIS_URL"] = os.getenv("REDIS_URL")
@@ -111,6 +121,7 @@ def create_app(config_module=None):
     app.register_blueprint(feedback_bp)
     app.register_blueprint(order_bp)
     app.register_blueprint(wishlist_bp)
+    app.register_blueprint(subscription_bp)
 
     @app.route("/uploads/<path:filename>")
     def serve_uploads(filename):
