@@ -10,6 +10,7 @@ from models.product_category import ProductCategories
 from models.category import Categories
 import services.user_services as user_services
 
+
 def random_string(length=6):
     """Generate a random string for unique test data."""
     return "".join(random.choices(string.ascii_lowercase + string.digits, k=length))
@@ -35,11 +36,13 @@ def app():
 
     return app
 
+
 @pytest.fixture(autouse=True)
 def isolate_csv_file(tmp_path, monkeypatch):
     """Redirect CSV_TOPUP_FILE to a temp file for all tests."""
     test_csv = tmp_path / "topup_test.csv"
     monkeypatch.setattr(user_services, "CSV_TOPUP_FILE", str(test_csv))
+
 
 @pytest.fixture(scope="function")
 def init_db(app):
@@ -157,7 +160,7 @@ def customer_token(app):
 
 
 @pytest.fixture
-def admin_token(app):
+def admin_token(app, init_db):
     with app.app_context():
         return create_access_token(
             identity=str(app.test_admin_id), additional_claims={"role": "admin"}
