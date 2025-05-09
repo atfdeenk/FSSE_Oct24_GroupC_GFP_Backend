@@ -200,6 +200,10 @@ def delete_order(order_id):
 @order_bp.route("/orders/preview", methods=["POST"])
 @jwt_required()
 def preview_order():
+    from models.voucher import Vouchers
+    from models.product import Products
+    from datetime import datetime
+
     data = request.get_json()
     items = data.get("items", [])
     voucher_code = data.get("voucher_code")
@@ -215,17 +219,20 @@ def preview_order():
             }), 400
 
     total_before = sum(item["quantity"] * item["unit_price"] for item in items)
-
     discount = 0
     voucher = None
 
     if voucher_code:
-        from models.voucher import Vouchers
-        from datetime import datetime
-
         voucher = Vouchers.query.filter_by(code=voucher_code, is_active=True).first()
         if not voucher or (voucher.expires_at and voucher.expires_at < datetime.utcnow()):
             return jsonify({"msg": "Voucher is invalid or expired."}), 400
+
+        product_ids = [item["product_id"] for item in items]
+        products = Products.query.filter(Products.id.in_(product_ids)).all()
+        distinct_vendor_ids = {p.vendor_id for p in products}
+
+        if len(distinct_vendor_ids) != 1 or voucher.vendor_id not in distinct_vendor_ids:
+            return jsonify({"msg": "Voucher can only be used for products from the issuing vendor."}), 400
 
         if voucher.discount_percent:
             discount = total_before * (voucher.discount_percent / 100)
