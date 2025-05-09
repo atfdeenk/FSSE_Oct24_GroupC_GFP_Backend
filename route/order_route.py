@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from services import order_services
 
 order_bp = Blueprint("order_bp", __name__)
@@ -11,7 +11,7 @@ order_bp = Blueprint("order_bp", __name__)
 def create_order():
     data = request.get_json()
     items = data.get("items", [])
-    voucher_code = data.get("voucher_code")  
+    voucher_code = data.get("voucher_code")
     current_user = get_jwt_identity()
 
     current_app.logger.info(f"User {current_user} is attempting to create an order.")
@@ -37,7 +37,6 @@ def create_order():
 
     user_id = current_user.get("id") if isinstance(current_user, dict) else current_user
 
-    
     order, error = order_services.create_order_with_items(user_id, items, voucher_code)
     if error:
         current_app.logger.error(f"Order creation failed: {error}")
@@ -71,7 +70,6 @@ def create_order():
         ),
         201,
     )
-
 
 
 # Get a specific order
@@ -153,7 +151,9 @@ def get_user_orders():
             }
         )
 
-    current_app.logger.info(f"Fetched {len(orders_with_items)} orders for user {user_id}.")
+    current_app.logger.info(
+        f"Fetched {len(orders_with_items)} orders for user {user_id}."
+    )
 
     return (
         jsonify(orders_with_items),
@@ -168,16 +168,29 @@ def update_order_status(order_id):
     data = request.get_json()
     status = data.get("status")
 
+    role = get_jwt().get("role")
+    if role != "admin":
+        current_app.logger.warning(
+            f"Unauthorized order status update attempt by non-admin user for order {order_id}."
+        )
+        return jsonify({"msg": "Admin privileges required to change order status"}), 403
+
     if not status:
-        current_app.logger.warning(f"Order status update failed: No status provided for order {order_id}.")
+        current_app.logger.warning(
+            f"Order status update failed: No status provided for order {order_id}."
+        )
         return jsonify({"msg": "Status is required"}), 400
 
     order, error = order_services.update_order_status(order_id, status)
     if error:
         if error == "Order not found.":
-            current_app.logger.warning(f"Order status update failed: {error} (order {order_id})")
+            current_app.logger.warning(
+                f"Order status update failed: {error} (order {order_id})"
+            )
             return jsonify({"msg": error}), 404
-        current_app.logger.error(f"Order status update failed: {error} (order {order_id})")
+        current_app.logger.error(
+            f"Order status update failed: {error} (order {order_id})"
+        )
         return jsonify({"msg": error}), 400
 
     current_app.logger.info(f"Order {order_id} status updated to {status}.")
@@ -210,9 +223,14 @@ def preview_order():
     required_keys = {"product_id", "quantity", "unit_price"}
     for idx, item in enumerate(items):
         if not all(key in item for key in required_keys):
-            return jsonify({
-                "msg": f"Item at index {idx} is missing required keys: {required_keys}"
-            }), 400
+            return (
+                jsonify(
+                    {
+                        "msg": f"Item at index {idx} is missing required keys: {required_keys}"
+                    }
+                ),
+                400,
+            )
 
     total_before = sum(item["quantity"] * item["unit_price"] for item in items)
 
@@ -224,7 +242,9 @@ def preview_order():
         from datetime import datetime
 
         voucher = Vouchers.query.filter_by(code=voucher_code, is_active=True).first()
-        if not voucher or (voucher.expires_at and voucher.expires_at < datetime.utcnow()):
+        if not voucher or (
+            voucher.expires_at and voucher.expires_at < datetime.utcnow()
+        ):
             return jsonify({"msg": "Voucher is invalid or expired."}), 400
 
         if voucher.discount_percent:
@@ -234,9 +254,14 @@ def preview_order():
 
     total_after = max(total_before - discount, 0)
 
-    return jsonify({
-        "total_before_discount": total_before,
-        "discount_amount": discount,
-        "total_after_discount": total_after,
-        "voucher_code": voucher.code if voucher else None
-    }), 200
+    return (
+        jsonify(
+            {
+                "total_before_discount": total_before,
+                "discount_amount": discount,
+                "total_after_discount": total_after,
+                "voucher_code": voucher.code if voucher else None,
+            }
+        ),
+        200,
+    )

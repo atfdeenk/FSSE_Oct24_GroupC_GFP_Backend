@@ -16,7 +16,9 @@ ALLOWED_STATUS_TRANSITIONS = {
 }
 
 
-def create_order_with_items(user_id, items, voucher_code=None):  # ✅ Accept voucher_code
+def create_order_with_items(
+    user_id, items, voucher_code=None
+):  # ✅ Accept voucher_code
     total_amount = sum(item["quantity"] * item["unit_price"] for item in items)
 
     # ✅ Voucher logic before DB transaction
@@ -25,7 +27,9 @@ def create_order_with_items(user_id, items, voucher_code=None):  # ✅ Accept vo
 
     if voucher_code:
         voucher = Vouchers.query.filter_by(code=voucher_code, is_active=True).first()
-        if not voucher or (voucher.expires_at and voucher.expires_at < datetime.utcnow()):
+        if not voucher or (
+            voucher.expires_at and voucher.expires_at < datetime.utcnow()
+        ):
             raise ValueError("Voucher is invalid or expired.")
 
         if voucher.discount_percent:
@@ -76,8 +80,6 @@ def create_order_with_items(user_id, items, voucher_code=None):  # ✅ Accept vo
     except (IntegrityError, ValueError) as e:
         db.session.rollback()
         return None, str(e)
-
-    
 
 
 def get_order(order_id):
@@ -144,6 +146,7 @@ def update_order_status(order_id, new_status):
             # Update order status
             order.status = new_status
 
+        db.session.commit()
         return order, None
 
     except (IntegrityError, ValueError) as e:
