@@ -86,10 +86,17 @@ def get_all_products_filtered(
 
     if current_user_role == "admin":
         if only_unapproved:
-            query = query.filter(Products.is_approved == False)
+            query = query.filter(
+                Products.is_approved == False,
+                Products.rejected == False  # <-- Add this
+            )
         elif not include_unapproved:
             query = query.filter(Products.is_approved == True)
-        
+        elif include_unapproved:
+            query = query.filter(
+                (Products.is_approved == False) & 
+                (Products.rejected == False)  # <-- Add this
+            )
 
     elif current_user_role == "vendor":
         print(f"[DEBUG][REPO] role=vendor, include_unapproved={include_unapproved}, only_unapproved={only_unapproved}, vendor_id={current_user_id}")
