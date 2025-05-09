@@ -1,7 +1,9 @@
 from models.product import Products
+from models.voucher import Vouchers
 from repo import order_repo
 from sqlalchemy.exc import IntegrityError
 from instance.database import db
+from datetime import datetime
 
 
 # Define allowed transitions
@@ -14,17 +16,35 @@ ALLOWED_STATUS_TRANSITIONS = {
 }
 
 
-def create_order_with_items(user_id, items):
-    """Create an order and its items transactionally."""
+def create_order_with_items(user_id, items, voucher_code=None):  # ✅ Accept voucher_code
     total_amount = sum(item["quantity"] * item["unit_price"] for item in items)
 
+    # ✅ Voucher logic before DB transaction
+    voucher = None
+    discount_amount = 0
+
+    if voucher_code:
+        voucher = Vouchers.query.filter_by(code=voucher_code, is_active=True).first()
+        if not voucher or (voucher.expires_at and voucher.expires_at < datetime.utcnow()):
+            raise ValueError("Voucher is invalid or expired.")
+
+        if voucher.discount_percent:
+            discount_amount += total_amount * (voucher.discount_percent / 100)
+        elif voucher.discount_amount:
+            discount_amount += float(voucher.discount_amount)
+
+    final_amount = max(total_amount - discount_amount, 0)
+
     try:
-        with db.session.begin_nested():  # 🚀 Start nested transaction
+        with db.session.begin_nested():
             order_data = {
                 "user_id": user_id,
-                "total_amount": total_amount,
+                "total_amount": final_amount,
                 "status": "pending",
             }
+            if voucher:
+                order_data["voucher_id"] = voucher.id  # ✅ Add if voucher valid
+
             order = order_repo.create_order(order_data)
 
             for item in items:
@@ -49,12 +69,15 @@ def create_order_with_items(user_id, items):
                         "vendor_id": product.vendor_id,
                     }
                 )
+
         db.session.commit()
         return order, None
 
     except (IntegrityError, ValueError) as e:
         db.session.rollback()
         return None, str(e)
+
+    
 
 
 def get_order(order_id):

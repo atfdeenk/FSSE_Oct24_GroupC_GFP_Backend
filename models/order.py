@@ -1,5 +1,6 @@
 from instance.database import db
 from shared import crono
+from models.voucher import Vouchers
 
 
 class Orders(db.Model):
@@ -12,6 +13,9 @@ class Orders(db.Model):
     total_amount = db.Column(db.Numeric(10, 2), nullable=False)
     status = db.Column(db.String(50), nullable=False)
     created_at = db.Column(db.DateTime, default=crono.now)
+    voucher_id = db.Column(db.Integer, db.ForeignKey("vouchers.id"), nullable=True)
+    voucher = db.relationship("Vouchers")
+
 
     user = db.relationship("Users", back_populates="orders")
     order_items = db.relationship(
